@@ -1,0 +1,25 @@
+# Optimal Fashion-MNIST-60K parameters for stat_filter
+# Speed/recall balance: 90.25% recall, 48ms, 208,333 QPS
+BIT_MODE=2
+TOP_K=10
+MAD_SCALE=0.4
+
+# Alternative configurations (uncomment to use):
+
+# High precision (95.21% recall, 68ms, 147,059 QPS)
+# BIT_MODE=4  
+# TOP_K=4
+# MAD_SCALE=0.4
+
+# Small batch perfect recall (100% recall, 4ms, 2,500 QPS)
+# BIT_MODE=4
+# TOP_K=5
+# MAD_SCALE=0
+
+# Other tested high-performance configurations:
+# BIT_MODE=4, TOP_K=8, MAD_SCALE=0.5 → 98.25% recall, 85ms, 171,647 QPS
+# BIT_MODE=2, TOP_K=20, MAD_SCALE=0.7 → 97.02% recall, 81ms, 123,457 QPS
+# BIT_MODE=2, TOP_K=20, MAD_SCALE=0.5 → 95.55% recall, 74ms, 135,135 QPS
+
+# Fashion-MNIST benefits from MAD filtering (MAD_SCALE=0.3-0.7 range)
+# Use MAD_SCALE=0 only for small batches requiring perfect recall

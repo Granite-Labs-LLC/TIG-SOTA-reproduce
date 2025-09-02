@@ -1,0 +1,26 @@
+# Optimal SIFT-1M parameters for stat_filter
+# Best balance configuration: 97.56% recall, 161ms, 62,112 QPS
+BIT_MODE=4
+TOP_K=5  
+MAD_SCALE=0
+
+# Alternative configurations (uncomment to use):
+
+# Highest recall (98.78% recall, 167ms, 59,880 QPS)
+# BIT_MODE=4
+# TOP_K=8
+# MAD_SCALE=0
+
+# Fastest with good recall (96.41% recall, 159ms, 62,893 QPS)  
+# BIT_MODE=4
+# TOP_K=4
+# MAD_SCALE=0
+
+# Lower precision option (86.85% recall, 258ms, 38,760 QPS)
+# BIT_MODE=2
+# TOP_K=20
+# MAD_SCALE=0
+
+# CRITICAL: SIFT dataset MUST use MAD_SCALE=0 (MAD disabled)
+# Any non-zero MAD_SCALE will cause severe recall degradation due to
+# the heavy-tailed distribution characteristics of SIFT data
