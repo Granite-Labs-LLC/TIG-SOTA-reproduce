@@ -1,0 +1,339 @@
+/*!
+Copyright 2025 Granite Labs LLC
+
+Identity of Submitter [name of person or entity that submits the Work to TIG]
+
+Licensed under the TIG Inbound Game License v2.0 or (at your option) any later
+version (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+
+https://github.com/tig-foundation/tig-monorepo/tree/main/docs/licenses
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the specific
+language governing permissions and limitations under the License.
+*/
+
+//
+// stat_filter
+//
+// Filtering based on Median Absolute Deviation (MAD):
+// We compute the median of all L2 norms, then calculate the MAD (median of
+// absolute deviations from the median). The threshold is set to:
+//      norm_threshold = scale_factor × MAD × 1.4826
+// The factor 1.4826 scales MAD to match the standard deviation for normally
+// distributed data. This makes the filter more robust to outliers compared to
+// filtering methods based on mean and standard deviation, which are more
+// sensitive to extreme values.
+//
+// Reference:
+// - NIST Engineering Statistics Handbook:
+//   https://www.itl.nist.gov/div898/handbook/eda/section3/eda35h.htm
+// - See also: https://www.itl.nist.gov/div898/handbook/eda/section3/eda356.htm
+//
+
+#include <float.h>
+
+
+extern "C" __global__ void compute_vector_stats_kernel(
+    const float* vector_database,
+    float* norm_l2,
+    float* norm_l2_squared,
+    int vector_database_len,
+    const int vector_size
+)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    double norm_sq = 0.0;
+
+    if (i < vector_database_len) {
+        int idx = i * vector_size;
+        for (int j = 0; j < vector_size; j++) {
+            double value = vector_database[idx + j];
+            norm_sq += value * value;
+        }
+        norm_l2_squared[i] = norm_sq;
+        norm_l2[i] = sqrt(norm_sq);
+    }
+}
+
+
+#if 0
+
+extern "C" __global__ void find_nearest_neighbor_kernel(
+    const float* __restrict__ query_vectors,
+    const float* __restrict__ vector_database,
+    const float* __restrict__ norm_l2,
+    const float* __restrict__ norm_l2_squared,
+    int* __restrict__ query_results,
+    const float max_distance,
+    const int vector_database_len,
+    const int query_vectors_len,
+    const int vector_size,
+    const float precomputed_threshold
+)
+{
+    int q = blockIdx.x;
+    if (q >= query_vectors_len) return;
+
+    extern __shared__ char shared_memory[];
+    int* smem_candidate_index = (int*)shared_memory;
+    float* smem_candidate_distance = (float*)(smem_candidate_index + blockDim.x);
+    float* smem_query_vector = (float*)(smem_candidate_distance + blockDim.x);
+
+    for (int j = threadIdx.x; j < vector_size; j += blockDim.x) {
+        smem_query_vector[j] = query_vectors[q * vector_size + j];
+    }
+    __syncthreads();
+
+    __shared__ float norm_threshold;
+    __shared__ float query_norm_sq;
+    __shared__ float query_norm;
+
+    if (threadIdx.x == 0) {
+        norm_threshold = precomputed_threshold;
+        float sum_sq = 0.0f;
+        for (int j = 0; j < vector_size; ++j) {
+            float v = smem_query_vector[j];
+            sum_sq = fmaf(v, v, sum_sq);
+        }
+        query_norm_sq = sum_sq;
+        query_norm = sqrtf(sum_sq);
+    }
+    __syncthreads();
+
+    float best_distance = FLT_MAX;
+    int   best_index    = INT_MAX;
+    int i = threadIdx.x;
+
+    while (i < vector_database_len) {
+        float norm_diff = fabsf(norm_l2[i] - query_norm);
+        if (norm_diff <= norm_threshold) {
+            float dot = 0.0f;
+            for (int j = 0; j < vector_size; j++) {
+                dot = fmaf(smem_query_vector[j], vector_database[i * vector_size + j], dot);
+            }
+            float distance_sq = query_norm_sq + norm_l2_squared[i] - 2.0f * dot;
+            if (distance_sq < best_distance) {
+                best_index = i;
+                best_distance = distance_sq;
+            }
+        }
+        i += blockDim.x;
+    }
+
+    smem_candidate_index[threadIdx.x]    = best_index;
+    smem_candidate_distance[threadIdx.x] = best_distance;
+    __syncthreads();
+
+    for (int stride = blockDim.x / 2; stride > 0; stride /= 2) {
+        if (threadIdx.x < stride) {
+            if (smem_candidate_distance[threadIdx.x + stride] < smem_candidate_distance[threadIdx.x]) {
+                smem_candidate_distance[threadIdx.x] = smem_candidate_distance[threadIdx.x + stride];
+                smem_candidate_index[threadIdx.x] = smem_candidate_index[threadIdx.x + stride];
+            }
+        }
+        __syncthreads();
+    }
+
+    if (threadIdx.x == 0) {
+        query_results[q] = smem_candidate_index[0];
+    }
+}
+
+#endif
+
+
+#include <float.h>
+#include <limits.h>
+#include <stdint.h>
+
+extern "C" __global__ void init_u64_max(unsigned long long* buf, int n) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < n) buf[i] = 0xFFFFFFFFFFFFFFFFull;
+}
+
+
+static __device__ inline uint32_t float_to_ordered_uint(float x) {
+    // Distances are non-negative; for safety, clamp negatives to 0
+    if (x < 0.0f) x = 0.0f;
+    // For non-negative floats, IEEE-754 bit pattern increases with value
+    return __float_as_uint(x);
+}
+
+static __device__ inline uint64_t pack_dist_idx(float dist, int idx) {
+    uint64_t hi = (uint64_t)float_to_ordered_uint(dist);
+    uint64_t lo = (uint64_t)(uint32_t)idx;  // tie-breaker by smaller index
+    return (hi << 32) | lo;
+}
+
+extern "C" __global__ void find_nearest_neighbor_kernel_segmented(
+    const float* __restrict__ query_vectors,
+    const float* __restrict__ vector_database,
+    const float* __restrict__ norm_l2,
+    const float* __restrict__ norm_l2_squared,
+    /* out (finalized in a 2nd kernel) */ int* __restrict__ query_results,
+    const float max_distance,                 // (unused in this snippet, kept for API compatibility)
+    const int vector_database_len,
+    const int query_vectors_len,
+    const int vector_size,
+    const float precomputed_threshold,
+    /* NEW: how many blocks per query (i.e., how many segments) */
+    const int num_segments,
+    /* NEW: per-query packed result: upper 32 bits = distance, lower 32 bits = index.
+       Must be pre-initialized to 0xFFFFFFFFFFFFFFFF for each query. */
+    unsigned long long* __restrict__ results_packed
+)
+{
+    // Map 1D grid into (query, segment)
+    int global_block = blockIdx.x;
+    int q = global_block / num_segments;     // which query
+    int seg = global_block % num_segments;   // which segment of DB
+
+    if (q >= query_vectors_len) return;
+
+    extern __shared__ char shared_memory[];
+    int*   smem_candidate_index    = (int*)shared_memory;
+    float* smem_candidate_distance = (float*)(smem_candidate_index + blockDim.x);
+#if 1
+    float* smem_query_vector       = (float*)(smem_candidate_distance + blockDim.x);
+
+    // Cache the query vector into shared memory
+    for (int j = threadIdx.x; j < vector_size; j += blockDim.x) {
+        smem_query_vector[j] = query_vectors[q * vector_size + j];
+    }
+    __syncthreads();
+
+    const float* __restrict__ qv = smem_query_vector;
+#else
+
+    const float* __restrict__ qv = &query_vectors[q * vector_size];
+#endif
+
+    __shared__ float norm_threshold;
+    __shared__ float query_norm_sq;
+    __shared__ float query_norm;
+
+    if (threadIdx.x == 0) {
+        norm_threshold = precomputed_threshold;
+        float sum_sq = 0.0f;
+        for (int j = 0; j < vector_size; ++j) {
+            //float v = smem_query_vector[j];
+            //sum_sq = fmaf(v, v, sum_sq);
+            sum_sq = fmaf(qv[j], qv[j], sum_sq);
+        }
+        query_norm_sq = sum_sq;
+        query_norm    = sqrtf(sum_sq);
+    }
+    __syncthreads();
+
+    // Compute this block's [start, end) segment in the database
+    int seg_size = (vector_database_len + num_segments - 1) / num_segments; // ceil div
+    int start    = seg * seg_size;
+    int end      = min(start + seg_size, vector_database_len);
+
+    float best_distance = FLT_MAX;
+    int   best_index    = INT_MAX;
+
+    // Stride over only our segment
+    for (int i = start + threadIdx.x; i < end; i += blockDim.x) {
+
+        //const float* __restrict__ db = &vector_database[i * vector_size];
+        //const float* __restrict__ qv = smem_query_vector;
+        const float* __restrict__ db = &vector_database[i * vector_size];
+
+        float norm_diff = fabsf(norm_l2[i] - query_norm);
+        if (norm_diff <= norm_threshold) {
+#if 1
+            float dot = 0.0f;
+            // dot(query, db[i])
+            for (int j = 0; j < vector_size; j++) {
+                //dot = fmaf(smem_query_vector[j], vector_database[i * vector_size + j], dot);
+                dot = fmaf(qv[j], db[j], dot);
+            }
+#else
+
+            float a0=0.f, a1=0.f, a2=0.f, a3=0.f;
+            int j = 0;
+
+            // unroll by 4
+#pragma unroll 4
+            for (; j + 3 < vector_size; j += 4) {
+                a0 = fmaf(qv[j+0], db[j+0], a0);
+                a1 = fmaf(qv[j+1], db[j+1], a1);
+                a2 = fmaf(qv[j+2], db[j+2], a2);
+                a3 = fmaf(qv[j+3], db[j+3], a3);
+            }
+
+            // tail
+            float dot = (a0 + a1) + (a2 + a3);
+            for (; j < vector_size; ++j) {
+                dot = fmaf(qv[j], db[j], dot);
+            }
+#endif
+
+            float distance_sq = query_norm_sq + norm_l2_squared[i] - 2.0f * dot;
+
+#if 1
+            if (distance_sq < best_distance) {
+                best_index    = i;
+                best_distance = distance_sq;
+            }
+#elif 0
+            const bool better = (distance_sq < best_distance);
+            best_index    = better ? i            : best_index;
+            best_distance = better ? distance_sq  : best_distance;
+#else
+            best_distance = fminf(best_distance, distance_sq);
+            best_index    = (best_distance==distance_sq) ? i : best_index;
+#endif
+        }
+    }
+
+    // Block-wide reduction to get the best candidate of this block
+    smem_candidate_index[threadIdx.x]    = best_index;
+    smem_candidate_distance[threadIdx.x] = best_distance;
+    __syncthreads();
+
+    for (int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
+        if (threadIdx.x < stride) {
+            if (smem_candidate_distance[threadIdx.x + stride] < smem_candidate_distance[threadIdx.x]) {
+                smem_candidate_distance[threadIdx.x] = smem_candidate_distance[threadIdx.x + stride];
+                smem_candidate_index[threadIdx.x]    = smem_candidate_index[threadIdx.x + stride];
+            }
+        }
+        __syncthreads();
+    }
+
+    // One thread per block atomically merges into the per-query global result
+    if (threadIdx.x == 0) {
+        unsigned long long packed = (unsigned long long)pack_dist_idx(smem_candidate_distance[0],
+                                                                      smem_candidate_index[0]);
+        // Atomic min on 64-bit (distance first, then index)
+        atomicMin(&results_packed[q], packed);
+    }
+
+    // NOTE: query_results[] is written by a separate finalize kernel below
+}
+
+
+//--------------------------------
+
+
+extern "C" __global__ void finalize_results_kernel(
+    const unsigned long long* __restrict__ results_packed,
+    int* __restrict__ query_results,
+    int query_vectors_len
+) {
+    int q = blockIdx.x * blockDim.x + threadIdx.x;
+    if (q >= query_vectors_len) return;
+
+    unsigned long long packed = results_packed[q];
+    // If nothing found, packed may still be 0xFFFFFFFFFFFFFFFF
+    uint32_t idx = (uint32_t)(packed & 0xFFFFFFFFull);
+    query_results[q] = (idx == 0xFFFFFFFFu) ? -1 : (int)idx;
+}
+
+
+

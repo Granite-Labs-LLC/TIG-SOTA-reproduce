@@ -1,0 +1,37 @@
+[package]
+name = "tig-algorithms"
+version = "0.1.0"
+readme = "README.md"
+authors.workspace = true
+repository.workspace = true
+edition.workspace = true
+
+[dependencies]
+ahash = "0.8.12"
+anyhow = "1.0.81"
+cudarc = { git = "https://github.com/tig-foundation/cudarc.git", branch = "automatic-fuel-check", features = [
+    "cuda-version-from-build-system",
+], optional = true }
+half = "2.6.0"
+ndarray = "0.15.6"
+rand = { version = "0.8.5", default-features = false, features = [
+    "std_rng",
+    "small_rng",
+] }
+tig-challenges = { path = "../tig-challenges" }
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+cuda = ["cudarc"]
+c001 = ["tig-challenges/c001"]
+satisfiability = ["c001"]
+c002 = ["tig-challenges/c002"]
+vehicle_routing = ["c002"]
+c003 = ["tig-challenges/c003"]
+knapsack = ["c003"]
+c004 = ["cuda", "tig-challenges/c004"]
+vector_search = ["c004"]
+c005 = ["cuda", "tig-challenges/c005"]
+hypergraph = ["c005"]

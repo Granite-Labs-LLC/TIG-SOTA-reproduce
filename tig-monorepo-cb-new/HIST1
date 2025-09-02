@@ -1,0 +1,283 @@
+
+echo 'set paste' > ~/.vimrc ; echo 'set background=dark' >> ~/.vimrc
+
+    1  2025-08-25 14:56:17 cd /tig-SOTA-metrics/tig-monorepo-cb-u8-quant-4bit-tigcompat
+    2  2025-08-25 14:56:24 build_algorithm stat_filter
+    3  2025-08-25 14:56:45 cd tig-monorepo-cb-u8-quant-4bit-tigcompat
+    4  2025-08-25 14:56:47 build_algorithm stat_filter
+    5  2025-08-25 14:57:30 ls
+    6  2025-08-25 14:57:54 apt update ; apt -y install vim
+    7  2025-08-25 14:58:07 ls scripts/
+    8  2025-08-25 14:58:30 scripts/test_algorithm_timer --nonces 10 stat_filter [2000,500]
+    9  2025-08-25 14:59:51 cd ../*f16-tigcompat
+   10  2025-08-25 14:59:52 ls
+   11  2025-08-25 15:00:05 cd ../4bit-tigcompat
+   12  2025-08-25 15:00:29 cd ../*/4bit-tigcompat
+   13  2025-08-25 15:00:31 ls
+   14  2025-08-25 15:00:35 cd ../*4bit-tigcompat
+   15  2025-08-25 15:00:41 ls
+   16  2025-08-25 15:01:24 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+   17  2025-08-25 15:04:17 build_algorithm stat_filter
+   18  2025-08-25 15:05:24 vi quicktest.sh
+   19  2025-08-25 15:05:38 sh quicktest.sh 
+   20  2025-08-25 15:05:57 vi quicktest.sh
+   21  2025-08-25 15:06:10 sh quicktest.sh 
+   22  2025-08-25 15:06:18 ls
+   23  2025-08-25 15:06:36 history 
+   24  2025-08-25 15:07:03 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+   25  2025-08-25 15:09:02 sh quicktest.sh 
+   26  2025-08-25 15:09:15 build_algorithm stat_filter && sh quicktest.sh 
+   27  2025-08-25 15:10:15 vi quicktest.sh 
+   28  2025-08-25 15:10:25 sh quicktest.sh 
+   29  2025-08-25 15:10:45 vi quicktest.sh 
+   30  2025-08-25 15:10:59 sh quicktest.sh 
+   31  2025-08-25 15:31:22 cd ..
+   32  2025-08-25 15:31:22 ls
+   33  2025-08-25 15:31:29 cd stat_filter
+   34  2025-08-25 15:31:30 ls
+   35  2025-08-25 15:31:46 cp ../tig-monorepo-cb-u8-quant-4bit-tigcompat/quicktest.sh .
+   36  2025-08-25 15:31:48 vi quicktest.sh 
+   37  2025-08-25 15:31:58 build_algorithm stat_filter && sh quicktest.sh 
+   38  2025-08-25 15:32:13 ls
+   39  2025-08-25 15:32:24 cd ../tig-monorepo-cb
+   40  2025-08-25 15:32:25 ls
+   41  2025-08-25 15:32:28 build_algorithm stat_filter && sh quicktest.sh 
+   42  2025-08-25 15:33:16 mv ../stat_filter/quicktest.sh .
+   43  2025-08-25 15:33:19 sh quicktest.sh 
+   44  2025-08-25 15:33:51 build_algorithm improved_search
+   45  2025-08-25 15:34:24 cat qui*.sh
+   46  2025-08-25 15:34:52 scripts/test_algorithm_timer --nonces 10 --verbose improved_search [2000,500]
+   47  2025-08-25 15:35:24 scripts/test_algorithm_timer --nonces 10 --verbose improved_search [2000,500] | grep 'Time for'
+   48  2025-08-25 15:35:53 sh quicktest.sh | grep 'Time for'
+   49  2025-08-25 15:36:18 ls
+   50  2025-08-25 15:37:04 history | grep vi
+   51  2025-08-25 15:37:08 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+   52  2025-08-25 16:07:48 build_algorithm stat_filter
+   53  2025-08-25 16:08:25 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+   54  2025-08-25 16:08:33 build_algorithm stat_filter
+   55  2025-08-25 16:09:10 sh quicktest.sh 
+   56  2025-08-25 16:09:52 scripts/test_algorithm_timer --help
+   57  2025-08-25 16:09:56 vi quicktest.sh 
+   58  2025-08-25 16:10:10 sh quicktest.sh 
+   59  2025-08-25 16:50:30 vi quicktest.sh 
+   60  2025-08-25 16:50:37 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+   61  2025-08-25 16:58:08 build_algorithm stat_filter
+   62  2025-08-25 16:58:46 sh quicktest.sh 
+   63  2025-08-25 17:00:33 find /usr/include/ -name '*.h' | xargs -n15 grep FLT_MAX
+   64  2025-08-25 17:01:45 ls /usr/local
+   65  2025-08-25 17:04:02 find /usr/local/cuda-12.6/ -name '*.h' | xargs -n15 grep FLT_MAX
+   66  2025-08-25 17:07:53 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+   67  2025-08-25 17:08:49 build_algorithm stat_filter
+   68  2025-08-25 17:09:28 sh quicktest.sh 
+   69  2025-08-25 17:10:00 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+   70  2025-08-25 17:11:04 build_algorithm stat_filter
+   71  2025-08-25 17:11:42 sh quicktest.sh 
+   72  2025-08-25 18:11:40 cd ../*4bin-tigcompat
+   73  2025-08-25 18:11:42 cd ..
+   74  2025-08-25 18:11:43 ls
+   75  2025-08-25 18:11:52 cd 
+   76  2025-08-25 18:11:56 cd app/tig-monorepo-cb-u8-quant-4bit-tigcompat
+   77  2025-08-25 18:12:00 cd app
+   78  2025-08-25 18:12:01 ls
+   79  2025-08-25 18:12:04 cd /app
+   80  2025-08-25 18:12:07 cd tig-monorepo-cb-u8-quant-4bit-tigcompat
+   81  2025-08-25 18:12:08 ls
+   82  2025-08-25 18:12:51 grep SCALE tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+   83  2025-08-25 18:13:01 sh quicktest.sh 
+   84  2025-08-25 18:13:41 SCALE_OVERRIDE=0 sh quicktest.sh 
+   85  2025-08-25 18:13:50 SCALE_OVERRIDE=100 sh quicktest.sh 
+   86  2025-08-25 18:13:58 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+   87  2025-08-25 18:14:05 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+   88  2025-08-25 18:14:38 SCALE_OVERRIDE=0 sh quicktest.sh 
+   89  2025-08-25 18:14:58 SCALE_OVERRIDE=0 sh STAT_FILTER_TOPK=64 quicktest.sh 
+   90  2025-08-25 18:15:09 SCALE_OVERRIDE=0 STAT_FILTER_TOPK=64 sh quicktest.sh 
+   91  2025-08-25 18:20:01 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+   92  2025-08-25 18:53:42 cat tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+   93  2025-08-25 20:07:45 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+   94  2025-08-25 20:09:50 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+   95  2025-08-25 20:18:59 build_algorithm stat_filter
+   96  2025-08-25 20:19:43 sh quicktest.sh 
+   97  2025-08-25 20:19:53 nvidia-smi
+   98  2025-08-25 20:25:38 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+   99  2025-08-25 20:30:50 build_algorithm stat_filter
+  100  2025-08-25 20:31:53 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  101  2025-08-25 20:34:56 find /usr/local/bin/tig-* -type f | xargs -n15 grep compute_70
+  102  2025-08-25 20:35:05 vi /usr/local/bin/tig-scripts/build_ptx
+  103  2025-08-25 20:35:37 build_algorithm stat_filter
+  104  2025-08-25 20:36:15 sh quicktest.sh 
+  105  2025-08-25 20:37:53 SCALE_OVERRIDE=0 STAT_FILTER_TOPK=64 sh quicktest.sh 
+  106  2025-08-25 20:38:08 SCALE_OVERRIDE=0 STAT_FILTER_TOPK=1 sh quicktest.sh 
+  107  2025-08-25 20:38:35 cd ..
+  108  2025-08-25 20:38:36 ls
+  109  2025-08-25 20:38:47 cd tig-monorepo-cb-f16-tigcompat
+  110  2025-08-25 20:38:49 ls
+  111  2025-08-25 20:39:00 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  112  2025-08-25 20:40:31 cd ../tig-monorepo-cb/
+  113  2025-08-25 20:40:34 ls
+  114  2025-08-25 20:40:52 build_algorithm stat_filter
+  115  2025-08-25 20:41:35 SCALE_OVERRIDE=0 STAT_FILTER_TOPK=1 sh quicktest.sh 
+  116  2025-08-25 20:41:53 SCALE_OVERRIDE=0 STAT_FILTER_TOPK=20 sh quicktest.sh 
+  117  2025-08-25 20:42:05 history 
+  118  2025-08-25 20:42:11 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  119  2025-08-25 20:46:23 build_algorithm stat_filter
+  120  2025-08-25 20:47:01 SCALE_OVERRIDE=0 STAT_FILTER_TOPK=20 sh quicktest.sh 
+  121  2025-08-25 20:48:32 sh quicktest.sh 
+  122  2025-08-25 20:50:44 SCALE_OVERRIDE=0 STAT_FILTER_TOPK=20 sh quicktest.sh 
+  123  2025-08-25 20:50:52 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  124  2025-08-25 20:52:44 cd ..
+  125  2025-08-25 20:52:45 ls
+  126  2025-08-25 20:53:06 cd tig-monorepo-cb-f16-tigcompat
+  127  2025-08-25 20:53:06 ls
+  128  2025-08-25 20:53:29 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  129  2025-08-25 21:10:25 build_algorithm stat_filter
+  130  2025-08-25 21:10:53 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  131  2025-08-25 21:14:18 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+  132  2025-08-25 21:16:20 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  133  2025-08-25 21:18:06 build_algorithm stat_filter
+  134  2025-08-25 21:18:57 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+  135  2025-08-25 21:20:02 build_algorithm stat_filter
+  136  2025-08-25 21:20:47 sh quicktest.sh 
+  137  2025-08-25 21:20:55 ls ../tig*/quic*.sh
+  138  2025-08-25 21:20:58 ls -l ../tig*/quic*.sh
+  139  2025-08-25 21:21:02 diff ../tig*/quic*.sh
+  140  2025-08-25 21:21:11 ls ../tig*/quic*.sh
+  141  2025-08-25 21:21:24 cp -p ../tig-monorepo-cb/quicktest.sh .
+  142  2025-08-25 21:21:30 sh quicktest.sh 
+  143  2025-08-25 21:22:14 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  144  2025-08-25 21:23:38 build_algorithm stat_filter
+  145  2025-08-25 21:23:44 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  146  2025-08-25 21:25:33 build_algorithm stat_filter
+  147  2025-08-25 21:25:38 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  148  2025-08-25 21:25:45 build_algorithm stat_filter
+  149  2025-08-25 21:26:13 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  150  2025-08-25 21:26:26 build_algorithm stat_filter
+  151  2025-08-25 21:27:07 sh quicktest.sh 
+  152  2025-08-25 21:27:29 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  153  2025-08-25 23:57:06 history
+  154  2025-08-25 23:57:14 env | grep HIST
+  155  2025-08-26 00:01:24 history 
+  156  2025-08-26 00:01:38 date
+  157  2025-08-26 00:05:14 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  158  2025-08-26 00:27:40 history 
+  159  2025-08-26 00:27:48 build_algorithm stat_filter
+  160  2025-08-26 00:28:30 sh quicktest.sh 
+  161  2025-08-26 00:32:08 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  162  2025-08-26 00:39:24 history 
+  163  2025-08-26 00:41:08 vi ../tig-monorepo-cb-u8-quant-4bit-tigcompat/tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+  164  2025-08-26 01:03:02 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+  165  2025-08-26 01:03:19 cd ../tig-monorepo-cb-u8-quant-4bit-tigcompat
+  166  2025-08-26 01:03:30 ls
+  167  2025-08-26 01:03:34 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+  168  2025-08-26 01:04:06 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  169  2025-08-26 01:11:22 build_algorithm stat_filter
+  170  2025-08-26 01:12:07 vi quicktest.sh 
+  171  2025-08-26 01:12:19 sh quicktest.sh 
+  172  2025-08-26 01:14:22 ls
+  173  2025-08-26 01:14:34 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+  174  2025-08-26 01:15:12 cd ../*fp16-tigcompat
+  175  2025-08-26 01:15:15 ls ..
+  176  2025-08-26 01:15:21 cd ../*f16-tigcompat
+  177  2025-08-26 01:15:25 ls
+  178  2025-08-26 01:15:41 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+  179  2025-08-26 01:16:42 build_algorithm stat_filter
+  180  2025-08-26 01:17:22 sh quicktest.sh 
+  181  2025-08-26 01:19:03 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  182  2025-08-26 01:20:52 build_algorithm stat_filter
+  183  2025-08-26 01:20:55 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  184  2025-08-26 01:22:34 build_algorithm stat_filter
+  185  2025-08-26 01:23:13 sh quicktest.sh 
+  186  2025-08-26 01:24:25 SCALE_OVERRIDE=0.5 sh quicktest.sh 
+  187  2025-08-26 01:24:42 SCALE_OVERRIDE=0.8 sh quicktest.sh 
+  188  2025-08-26 01:24:58 SCALE_OVERRIDE=1 sh quicktest.sh 
+  189  2025-08-26 01:25:34 ls /usr/local
+  190  2025-08-26 01:25:38 ls /usr/local/bin
+  191  2025-08-26 01:25:48 ls /usr/local/bin/tig-scripts/
+  192  2025-08-26 01:25:59 vi /usr/local/bin/tig-scripts//build_ptx
+  193  2025-08-26 01:29:40 build_algorithm stat_filter
+  194  2025-08-26 01:30:21 vi /usr/local/bin/tig-scripts//build_ptx
+  195  2025-08-26 01:30:56 build_algorithm stat_filter
+  196  2025-08-26 01:31:37 SCALE_OVERRIDE=1 sh quicktest.sh 
+  197  2025-08-26 01:33:18 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  198  2025-08-26 01:35:45 build_algorithm stat_filter
+  199  2025-08-26 01:36:31 SCALE_OVERRIDE=1 sh quicktest.sh 
+  200  2025-08-26 01:36:49 SCALE_OVERRIDE=1 sh quicktest.sh | grep Time
+  201  2025-08-26 01:37:06 SCALE_OVERRIDE=0.9 sh quicktest.sh | grep Time
+  202  2025-08-26 01:37:28 SCALE_OVERRIDE=0.9 sh quicktest.sh | egrep 'Time  for|solution'
+  203  2025-08-26 01:38:05 SCALE_OVERRIDE=0.9 sh quicktest.sh | egrep 'Time  for|Found solution'
+  204  2025-08-26 01:38:26 SCALE_OVERRIDE=0.9 sh quicktest.sh | egrep 'Time |found solution'
+  205  2025-08-26 01:38:52 SCALE_OVERRIDE=0.8 sh quicktest.sh | egrep 'Time for |found solution'
+  206  2025-08-26 01:39:11 SCALE_OVERRIDE=0.9 sh quicktest.sh | egrep 'Time for |found solution'
+  207  2025-08-26 01:40:39 build_algorithm improved_search
+  208  2025-08-26 01:41:28 SCALE_OVERRIDE=0.9 sh quicktest.sh | egrep 'Time for |found solution'
+  209  2025-08-26 01:42:11 scripts/test_algorithm_timer --nonces 10 --fuel 10000000000001 --verbose improved_search [2000,500]
+  210  2025-08-26 01:42:56 scripts/test_algorithm_timer --nonces 10 --fuel 10000000000001 --verbose improved_search [2000,500]  | egrep 'Time for |found solution'
+  211  2025-08-26 01:43:41 SCALE_OVERRIDE=0.9 sh quicktest.sh | egrep 'Time for |found solution'
+  212  2025-08-26 01:44:04 SCALE_OVERRIDE=0 sh quicktest.sh | egrep 'Time for |found solution'
+  213  2025-08-26 01:45:00 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  214  2025-08-26 01:47:26 build_algorithm stat_filter
+  215  2025-08-26 01:48:15 SCALE_OVERRIDE=0 sh quicktest.sh | egrep 'Time for |found solution'
+  216  2025-08-26 01:48:38 SCALE_OVERRIDE=0.9 sh quicktest.sh | egrep 'Time for |found solution'
+  217  2025-08-26 01:50:46 dd
+  218  2025-08-26 01:51:05 SCALE_OVERRIDE=0.9 sh quicktest.sh | egrep 'Time for |found solution'
+  219  2025-08-26 01:51:17 cd ../tig-monorepo-cb
+  220  2025-08-26 01:51:32 build_algorithm stat_filter
+  221  2025-08-26 01:52:24 SCALE_OVERRIDE=0.9 sh quicktest.sh | egrep 'Time for |found solution'
+  222  2025-08-26 01:55:51 build_algorithm improved_search
+  223  2025-08-26 01:56:33 scripts/test_algorithm_timer --nonces 10 --fuel 10000000000001 --verbose improved_search [2000,500]  | egrep 'Time for |found solution'
+  224  2025-08-26 01:59:43 history | grep build
+  225  2025-08-26 01:59:49 vi /usr/local/bin/tig-scripts//build_ptx
+  226  2025-08-26 02:01:11 build_algorithm improved_search
+  227  2025-08-26 02:01:53 build_algorithm stat_filter
+  228  2025-08-26 02:02:53 scripts/test_algorithm_timer --nonces 10 --fuel 10000000000001 --verbose improved_search [2000,500]  | egrep 'Time for |found solution'
+  229  2025-08-26 02:04:15 SCALE_OVERRIDE=0.9 sh quicktest.sh | egrep 'Time for |found solution'
+  230  2025-08-26 02:05:05 cd ..
+  231  2025-08-26 02:05:05 ls
+  232  2025-08-26 02:05:14 cd tig-monorepo-cb-f16-tigcompat
+  233  2025-08-26 02:05:23 build_algorithm improved_search
+  234  2025-08-26 02:06:04 build_algorithm stat_filter
+  235  2025-08-26 02:07:04 SCALE_OVERRIDE=0.9 sh quicktest.sh | egrep 'Time for |found solution'
+  236  2025-08-26 02:12:01 cd ..
+  237  2025-08-26 02:12:02 ls
+  238* 2025-08-26 02:12:09 cd tig-monorepo-cb-u8-quant-4bit-tigcompa
+  239  2025-08-26 02:12:20 build_algorithm improved_search
+  240  2025-08-26 02:18:31 history 
+  241  2025-08-26 02:27:02 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+  242  2025-08-26 02:39:02 build_algorithm stat_filter
+  243  2025-08-26 02:39:53 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+  244  2025-08-26 02:41:07 build_algorithm stat_filter
+  245  2025-08-26 02:42:19 SCALE_OVERRIDE=0.9 sh quicktest.sh | egrep 'Time for |found solution'
+  246  2025-08-26 02:42:34 sh quicktest.sh 
+  247  2025-08-26 02:43:01 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  248  2025-08-26 02:44:15 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+  249  2025-08-26 02:45:02 build_algorithm stat_filter
+  250  2025-08-26 02:45:45 sh quicktest.sh 
+  251  2025-08-26 02:46:09 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+  252  2025-08-26 02:46:14 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  253  2025-08-26 02:52:49 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+  254  2025-08-26 02:53:47 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  255  2025-08-26 02:55:57 build_algorithm stat_filter
+  256  2025-08-26 02:56:16 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  257  2025-08-26 02:56:45 build_algorithm stat_filter
+  258  2025-08-26 02:58:02 sh quicktest.sh 
+  259  2025-08-26 02:58:21 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  260  2025-08-26 03:08:03 build_algorithm stat_filter
+  261  2025-08-26 03:08:47 sh quicktest.sh 
+  262  2025-08-26 03:11:54 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+  263  2025-08-26 03:17:01 build_algorithm stat_filter
+  264  2025-08-26 03:17:39 sh quicktest.sh 
+  265  2025-08-26 03:18:18 SCALE_OVERRIDE=0 sh quicktest.sh 
+  266  2025-08-26 03:18:42 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  267  2025-08-26 03:20:07 build_algorithm stat_filter
+  268  2025-08-26 03:20:14 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  269  2025-08-26 03:20:54 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+  270  2025-08-26 03:21:03 build_algorithm stat_filter
+  271  2025-08-26 03:21:20 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+  272  2025-08-26 03:21:26 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  273  2025-08-26 03:21:45 build_algorithm stat_filter
+  274  2025-08-26 03:22:31 sh quicktest.sh 
+  275  2025-08-26 03:25:50 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+  276  2025-08-26 03:26:52 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.rs
+  277  2025-08-26 03:31:16 vi tig-algorithms/src/vector_search/stat_filter/benchmarker_outbound.cu
+  278  2025-08-26 03:31:56 build_algorithm stat_filter
+  279  2025-08-26 03:32:36 sh quicktest.sh 
+  280  2025-08-26 03:34:14 history > HIST1

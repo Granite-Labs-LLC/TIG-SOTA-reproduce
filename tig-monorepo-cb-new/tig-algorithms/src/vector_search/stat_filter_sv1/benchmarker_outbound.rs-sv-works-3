@@ -1,0 +1,986 @@
+/*!
+Copyright 2025 Granite Labs LLC
+
+Identity of Submitter [name of person or entity that submits the Work to TIG]
+
+Licensed under the TIG Inbound Game License v2.0 or (at your option) any later
+version (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+
+https://github.com/tig-foundation/tig-monorepo/tree/main/docs/licenses
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the specific
+language governing permissions and limitations under the License.
+*/
+
+// TIG's UI uses the pattern `tig_challenges::<challenge_name>` to automatically detect your algorithm's challenge
+
+// when launching kernels, you should not exceed this const or else it may not be deterministic
+//const MAX_THREADS_PER_BLOCK: u32 = 1024;
+
+//
+// stat_filter
+//
+// Filtering based on Median Absolute Deviation (MAD):
+// We compute the median of all L2 norms, then calculate the MAD (median of
+// absolute deviations from the median). The threshold is set to:
+//      norm_threshold = scale_factor × MAD × 1.4826
+// The factor 1.4826 scales MAD to match the standard deviation for normally
+// distributed data. This makes the filter more robust to outliers compared to
+// filtering methods based on mean and standard deviation, which are more
+// sensitive to extreme values.
+//
+// Reference:
+// - NIST Engineering Statistics Handbook:
+//   https://www.itl.nist.gov/div898/handbook/eda/section3/eda35h.htm
+// - See also: https://www.itl.nist.gov/div898/handbook/eda/section3/eda356.htm
+//
+
+//use crate::{seeded_hasher, HashMap, HashSet};
+
+/*!
+Copyright 2025 Granite Labs LLC
+...
+*/
+
+use std::sync::Arc;
+use anyhow::{anyhow, Result};
+use cudarc::{
+    driver::{CudaModule, CudaStream, LaunchConfig},
+    runtime::sys::cudaDeviceProp,
+};
+use cudarc::driver::PushKernelArg;
+
+use tig_challenges::vector_search::*;
+use std::env;
+
+const MAD_SCALE_NORMAL: f32 = 1.4826;
+const MAX_THREADS_PER_BLOCK: u32 = 1024;
+
+
+/// Compile-time K for Top-K retrieval (must be <= kernel KMAX)
+//pub const TOPK: usize = 1;
+//pub const TOPK: usize = 10;
+pub const TOPK: usize = 20;
+//pub const TOPK: usize = 32;
+//pub const TOPK: usize = 100;
+
+// Each block works on a different query
+
+pub fn solve_challenge(
+    challenge: &Challenge,
+    module: Arc<CudaModule>,
+    stream: Arc<CudaStream>,
+    prop: &cudaDeviceProp,
+    expected_nn: Option<&[usize]>, // NEW: optional ground-truth for Recall@K
+) -> Result<Option<Solution>> {
+    let start_time_total = std::time::Instant::now();
+
+    let mut topk = read_topk();
+    topk = topk.min(challenge.vector_dims as usize); // keep it relative to vector length
+    topk = topk.min(TOPK); // no larger than constant max
+
+
+    // Load kernels
+    let compute_dim_stats_kernel = module.load_function("compute_dim_stats_kernel")?;
+    //let compute_vector_stats_kernel = module.load_function("compute_vector_stats_kernel")?;
+    //let compute_vector_stats_u8_kernel   = module.load_function("compute_vector_stats_u8_kernel")?;
+    let build_divisors_from_max_kernel = module.load_function("build_divisors_from_max_kernel")?;
+
+    // Top-K search kernel (replaces find_nearest_neighbor_kernel)
+    //let find_topk_neighbors_kernel    = module.load_function("find_topk_neighbors_kernel")?;
+    //let find_nearest_neighbor_kernel    = module.load_function("find_nearest_neighbor_kernel")?;
+
+    // Allocations for dimension statistics
+    //let d_db_dim_sum = stream.alloc_zeros::<f32>(challenge.vector_dims as usize)?;
+    let d_db_dim_max = stream.alloc_zeros::<f32>(challenge.vector_dims as usize)?;
+    let d_s          = stream.alloc_zeros::<f32>(challenge.vector_dims as usize)?;
+    //let mut d_w       = stream.alloc_zeros::<f32>(challenge.vector_dims as usize)?;
+
+    // Allocations for norms
+    let d_db_norm_l2           = stream.alloc_zeros::<f32>(challenge.database_size as usize)?;
+    let d_db_norm_l2_squared   = stream.alloc_zeros::<f32>(challenge.database_size as usize)?;
+    let d_query_norm_l2        = stream.alloc_zeros::<f32>(challenge.difficulty.num_queries as usize)?;
+    let d_query_norm_l2_squared= stream.alloc_zeros::<f32>(challenge.difficulty.num_queries as usize)?;
+
+    // === REDUCED DIMENSIONS (not used yet... will be needed later for reduced data size) ===
+    let reduced_dims = challenge.vector_dims;
+println!("Reduced dims = {}", reduced_dims);
+
+    // Allocation for conversion
+    let num_db_el = challenge.database_size * challenge.vector_dims;
+    let num_qv_el = challenge.difficulty.num_queries * challenge.vector_dims;
+
+    // Allocate reduced buffers
+    let num_db_el_reduced = challenge.database_size * reduced_dims;
+    let num_qv_el_reduced = challenge.difficulty.num_queries * reduced_dims;
+
+
+    // ---------- Unpacked 8-bit ---------- 
+
+/*
+    // half stored as u8 in device memory
+    let d_db_u8 = stream.alloc_zeros::<u8>(num_db_el_reduced as usize)?;
+    let d_qv_u8 = stream.alloc_zeros::<u8>(num_qv_el_reduced as usize)?;
+*/
+
+
+    // ---------- 4-bit pack ---------- 
+
+    // Bytes per row when packing 2 dims per byte
+    let row_bytes_u4 = ((challenge.vector_dims as usize) + 1) >> 1;
+
+    let num_db_bytes_u4 = (challenge.database_size as usize) * row_bytes_u4;
+    let num_qv_bytes_u4 = (challenge.difficulty.num_queries as usize) * row_bytes_u4;
+
+    // Allocate packed outputs
+    let mut d_db_u4 = stream.alloc_zeros::<u8>(num_db_bytes_u4)?;
+    let mut d_qv_u4 = stream.alloc_zeros::<u8>(num_qv_bytes_u4)?;
+
+
+/*
+    // ---------- 2-bit pack ---------- 
+
+    let row_bytes_u2 = ((challenge.vector_dims as usize) + 3) >> 2;
+
+    let num_db_bytes_u2 = (challenge.database_size as usize) * row_bytes_u2;
+    let num_qv_bytes_u2 = (challenge.difficulty.num_queries as usize) * row_bytes_u2;
+
+    let mut d_db_u2 = stream.alloc_zeros::<u8>(num_db_bytes_u2)?;
+    let mut d_qv_u2 = stream.alloc_zeros::<u8>(num_qv_bytes_u2)?;
+*/
+
+
+    //
+    // ---------- Compute Dimensional Stats ---------- 
+    //
+println!("Compute dimensional stats");
+
+    let threads_db: u32 = 256;
+    let blocks_db:  u32 = ((num_db_el as u32) + threads_db - 1) / threads_db;
+
+    let threads_qv: u32 = 256;
+    let blocks_qv:  u32 = ((num_qv_el as u32) + threads_qv - 1) / threads_qv;
+
+    // Launch compute dim stats kernel
+    let cfg_db_ds = LaunchConfig {
+        grid_dim: (blocks_db, 1, 1),
+        block_dim: (threads_db, 1, 1),
+        shared_mem_bytes: 0,
+    };
+
+    unsafe {
+        stream
+            .launch_builder(&compute_dim_stats_kernel)
+            .arg(&challenge.d_database_vectors)
+            .arg(&d_db_dim_max)
+            .arg(&challenge.database_size)
+            .arg(&challenge.vector_dims)
+            .launch(cfg_db_ds)?;
+    }
+
+    stream.synchronize()?;
+
+
+    // Calculate the per-dim divisors based on max
+    let cfg_db_dm = LaunchConfig {
+        grid_dim: (blocks_db, 1, 1),
+        block_dim: (threads_db, 1, 1),
+        shared_mem_bytes: 0,
+    };
+
+    unsafe {
+        stream
+            .launch_builder(&build_divisors_from_max_kernel)
+            .arg(&d_db_dim_max)
+            .arg(&d_s)
+            .arg(&challenge.vector_dims)
+            .launch(cfg_db_dm)?;
+    }
+
+    stream.synchronize()?;
+
+
+    //
+    // ---------- Convert input data ---------- 
+    //
+/*
+    // ---------- Unpacked 8-bit ---------- 
+
+    let f32_to_u8_scaled_perdim_kernel = module.load_function("f32_to_u8_scaled_perdim_kernel")?;
+
+    // Launch conversion kernel
+    let cfg_db = LaunchConfig {
+        grid_dim: (blocks_db, 1, 1),
+        block_dim: (threads_db, 1, 1),
+        shared_mem_bytes: 0,
+    };
+
+    unsafe {
+        stream
+            .launch_builder(&f32_to_u8_scaled_perdim_kernel)
+            .arg(&challenge.d_database_vectors)
+            .arg(&d_s)
+            .arg(&d_db_u8)
+            .arg(&challenge.database_size)
+            .arg(&challenge.vector_dims)
+            .launch(cfg_db)?;
+    }
+
+    // Launch conversion kernel
+    let cfg_qv = LaunchConfig {
+        grid_dim: (blocks_qv, 1, 1),
+        block_dim: (threads_qv, 1, 1),
+        shared_mem_bytes: 0,
+    };
+
+    unsafe {
+        stream
+            .launch_builder(&f32_to_u8_scaled_perdim_kernel)
+            .arg(&challenge.d_query_vectors)
+            .arg(&d_s)
+            .arg(&d_qv_u8)
+            .arg(&challenge.difficulty.num_queries)
+            .arg(&challenge.vector_dims)
+            .launch(cfg_qv)?;
+    }
+
+    stream.synchronize()?;
+*/
+
+
+println!("Convert/pack input data to u4");
+    // ---------- 4-bit pack ---------- 
+    let f32_to_u4_packed_perdim_kernel = module.load_function("f32_to_u4_packed_perdim_kernel")?;
+
+    // DB
+    let threads_db: u32 = 256;
+    let blocks_db:  u32 = ((num_db_bytes_u4 as u32) + threads_db - 1) / threads_db;
+    let cfg_db = LaunchConfig { grid_dim: (blocks_db, 1, 1), block_dim: (threads_db, 1, 1), shared_mem_bytes: 0 };
+    
+    unsafe {
+        stream
+            .launch_builder(&f32_to_u4_packed_perdim_kernel)
+            .arg(&challenge.d_database_vectors)  // const float* in   [num_db * D]
+            .arg(&d_s)                           // const float* s    [D]
+            .arg(&d_db_u4)                       // uint8_t* out      [num_db * ((D+1)>>1)]
+            .arg(&challenge.database_size)       // num_vecs
+            .arg(&challenge.vector_dims)         // dims
+            .launch(cfg_db)?;
+    }
+
+    // Queries
+    let threads_qv: u32 = 256;
+    let blocks_qv:  u32 = ((num_qv_bytes_u4 as u32) + threads_qv - 1) / threads_qv;
+    let cfg_qv = LaunchConfig { grid_dim: (blocks_qv, 1, 1), block_dim: (threads_qv, 1, 1), shared_mem_bytes: 0 };
+
+    unsafe {
+        stream
+            .launch_builder(&f32_to_u4_packed_perdim_kernel)
+            .arg(&challenge.d_query_vectors)
+            .arg(&d_s)
+            .arg(&d_qv_u4)
+            .arg(&challenge.difficulty.num_queries)
+            .arg(&challenge.vector_dims)
+            .launch(cfg_qv)?;
+    }
+
+    stream.synchronize()?;
+
+
+
+/*
+    // ---------- 2-bit pack ---------- 
+
+    let f32_to_u2_packed_perdim_kernel = module.load_function("f32_to_u2_packed_perdim_kernel")?;
+
+    // DB
+    let threads_db: u32 = 256;
+    let blocks_db:  u32 = ((num_db_bytes_u2 as u32) + threads_db - 1) / threads_db;
+    let cfg_db = LaunchConfig { grid_dim: (blocks_db, 1, 1), block_dim: (threads_db, 1, 1), shared_mem_bytes: 0 };
+    
+    unsafe {
+        stream
+            .launch_builder(&f32_to_u2_packed_perdim_kernel)
+            .arg(&challenge.d_database_vectors)
+            .arg(&d_s)
+            .arg(&d_db_u2)
+            .arg(&challenge.database_size)
+            .arg(&challenge.vector_dims)
+            .launch(cfg_db)?;
+    }
+    
+    // Queries
+    let threads_qv: u32 = 256;
+    let blocks_qv:  u32 = ((num_qv_bytes_u2 as u32) + threads_qv - 1) / threads_qv;
+    let cfg_qv = LaunchConfig { grid_dim: (blocks_qv, 1, 1), block_dim: (threads_qv, 1, 1), shared_mem_bytes: 0 };
+
+    unsafe {
+        stream
+            .launch_builder(&f32_to_u2_packed_perdim_kernel)
+            .arg(&challenge.d_query_vectors)
+            .arg(&d_s)
+            .arg(&d_qv_u2)
+            .arg(&challenge.difficulty.num_queries)
+            .arg(&challenge.vector_dims)
+            .launch(cfg_qv)?;
+    }
+
+    stream.synchronize()?;
+
+
+*/
+
+
+    //======= DEBUG START ======
+
+use rand::{rngs::StdRng, SeedableRng};
+use rand::seq::index::sample;
+
+let dims = challenge.vector_dims as usize;
+let n_db = challenge.database_size as usize;
+let n_q  = challenge.difficulty.num_queries as usize;
+
+// Make sure your conversion kernels have finished.
+stream.synchronize()?;
+
+// ---------- 4-bit ----------
+let row_bytes_u4 = (dims + 1) >> 1;
+let h_db_u4: Vec<u8> = stream.memcpy_dtov(&d_db_u4)?; // [n_db * row_bytes_u4]
+let h_qv_u4: Vec<u8> = stream.memcpy_dtov(&d_qv_u4)?; // [n_q  * row_bytes_u4]
+
+/*
+// ---------- 2-bit ----------
+let row_bytes_u2 = (dims + 3) >> 2;
+let h_db_u2: Vec<u8> = stream.memcpy_dtov(&d_db_u2)?; // [n_db * row_bytes_u2]
+let h_qv_u2: Vec<u8> = stream.memcpy_dtov(&d_qv_u2)?; // [n_q  * row_bytes_u2]
+*/
+
+let mut rng = StdRng::seed_from_u64(0xDEADBEEF);
+
+// Unique random indices
+let db_idxs = sample(&mut rng, n_db, 5).into_vec();
+let qv_idxs = sample(&mut rng, n_q, 5).into_vec();
+
+
+let preview = 32.min(dims); // print first 32 dims (tweak as you like)
+
+// Print Query and DB samples
+let dbg_expected_nn = expected_nn.expect("expected_nn (ground truth) is required");
+
+// ---------- 4-bit ----------
+for &i in &qv_idxs {
+    // query row
+    let row = h_qv_u4
+        .get(i * row_bytes_u4 .. (i + 1) * row_bytes_u4)
+        .expect("query row OOB (u4)");
+    let bins = unpack_u4_prefix(row, dims, preview);
+    println!("Q [#{:>5}] first {:>2} dims (u4 codes): {:?}", i, preview, bins);
+
+    // db row (the GT neighbor for that query)
+    let j = *dbg_expected_nn.get(i).expect("missing NN for this query");
+    let rowdb = h_db_u4
+        .get(j * row_bytes_u4 .. (j + 1) * row_bytes_u4)
+        .expect("DB row OOB (u4)");
+    let binsdb = unpack_u4_prefix(rowdb, dims, preview);
+    println!("DB[{:>6}] first {:>2} dims (u4 codes): {:?}", j, preview, binsdb);
+}
+
+
+/*
+// ---------- 2-bit ----------
+for &i in &qv_idxs {
+    // query row
+    let row = h_qv_u2
+        .get(i * row_bytes_u2 .. (i + 1) * row_bytes_u2)
+        .expect("query row OOB (u2)");
+    let bins = unpack_u2_prefix(row, dims, preview);
+    println!("Q [#{:>5}] first {:>2} dims (u2 codes): {:?}", i, preview, bins);
+
+    // db row (the GT neighbor for that query)
+    let j = *dbg_expected_nn.get(i).expect("missing NN for this query");
+    let rowdb = h_db_u2
+        .get(j * row_bytes_u2 .. (j + 1) * row_bytes_u2)
+        .expect("DB row OOB (u2)");
+    let binsdb = unpack_u2_prefix(rowdb, dims, preview);
+    println!("DB[{:>6}] first {:>2} dims (u2 codes): {:?}", j, preview, binsdb);
+}
+*/
+
+
+    //======= DEBUG END ======
+
+
+    //
+    // ---------- Compute Vector Stats ---------- 
+    //
+/*
+    // ---------- Unpacked 8-bit ---------- 
+
+    // === Compute norms from REDUCED data (so distance math matches) ===
+    let threads_per_block_stats = prop.maxThreadsPerBlock as u32;
+    let num_blocks_db = (challenge.database_size + threads_per_block_stats - 1) / threads_per_block_stats;
+
+    let cfg_stats = LaunchConfig {
+        grid_dim: (num_blocks_db, 1, 1),
+        block_dim: (threads_per_block_stats, 1, 1),
+        shared_mem_bytes: 0
+    };
+
+    unsafe {
+        stream
+            .launch_builder(&compute_vector_stats_u8_kernel)
+            .arg(&d_db_u8)
+            .arg(&d_db_norm_l2)
+            .arg(&d_db_norm_l2_squared)
+            .arg(&challenge.database_size)
+            .arg(&challenge.vector_dims)
+            .launch(cfg_stats)?;
+    }
+
+    unsafe {
+        stream
+            .launch_builder(&compute_vector_stats_u8_kernel)
+            .arg(&d_qv_u8)
+            .arg(&d_query_norm_l2)
+            .arg(&d_query_norm_l2_squared)
+            .arg(&challenge.difficulty.num_queries)
+            .arg(&challenge.vector_dims)
+            .launch(cfg_stats)?;
+    }
+
+    stream.synchronize()?;
+*/
+
+
+    // ---------- 4-bit pack ---------- 
+println!("Compute vector stats u4");
+
+    let compute_vector_stats_u4_packed_kernel = module.load_function("compute_vector_stats_u4_packed_kernel")?;
+
+    let threads_per_block_stats = prop.maxThreadsPerBlock as u32;
+    let num_blocks_db = (challenge.database_size + threads_per_block_stats - 1) / threads_per_block_stats;
+
+    let cfg_stats = LaunchConfig {
+        grid_dim: (num_blocks_db, 1, 1),
+        block_dim: (threads_per_block_stats, 1, 1),
+        shared_mem_bytes: 0
+    };
+
+    // DB norms
+    unsafe {
+        stream
+            .launch_builder(&compute_vector_stats_u4_packed_kernel)
+            .arg(&d_db_u4)                 // const uint8_t* packed [num_db * ((D+1)>>1)]
+            .arg(&d_db_norm_l2)            // float* norm_l2        [num_db]
+            .arg(&d_db_norm_l2_squared)    // float* norm_l2_sq     [num_db]
+            .arg(&challenge.database_size) // num_vecs
+            .arg(&challenge.vector_dims)   // dims
+            .launch(cfg_stats)?;
+    }
+
+    // Query norms
+    let num_blocks_qv = (challenge.difficulty.num_queries + threads_per_block_stats - 1) / threads_per_block_stats;
+
+    let cfg_stats_qv = LaunchConfig {
+        grid_dim: (num_blocks_qv, 1, 1),
+        block_dim: (threads_per_block_stats, 1, 1),
+        shared_mem_bytes: 0
+    };
+
+    unsafe {
+        stream
+            .launch_builder(&compute_vector_stats_u4_packed_kernel)
+            .arg(&d_qv_u4)
+            .arg(&d_query_norm_l2)
+            .arg(&d_query_norm_l2_squared)
+            .arg(&challenge.difficulty.num_queries)
+            .arg(&challenge.vector_dims)
+            .launch(cfg_stats_qv)?;
+    }
+
+    stream.synchronize()?;
+
+
+
+/*
+    // ---------- 2-bit pack ---------- 
+
+    let compute_vector_stats_u2_packed_kernel = module.load_function("compute_vector_stats_u2_packed_kernel")?;
+
+    let threads_per_block_stats = prop.maxThreadsPerBlock as u32;
+    let num_blocks_db = (challenge.database_size + threads_per_block_stats - 1) / threads_per_block_stats;
+
+    let cfg_stats = LaunchConfig {
+        grid_dim: (num_blocks_db, 1, 1),
+        block_dim: (threads_per_block_stats, 1, 1),
+        shared_mem_bytes: 0
+    };
+
+    unsafe {
+        stream
+            .launch_builder(&compute_vector_stats_u2_packed_kernel)
+            .arg(&d_db_u2)
+            .arg(&d_db_norm_l2)
+            .arg(&d_db_norm_l2_squared)
+            .arg(&challenge.database_size)
+            .arg(&challenge.vector_dims)
+            .launch(cfg_stats)?;
+    }
+
+    let num_blocks_qv = (challenge.difficulty.num_queries + threads_per_block_stats - 1) / threads_per_block_stats;
+
+    let cfg_stats_qv = LaunchConfig {
+        grid_dim: (num_blocks_qv, 1, 1),
+        block_dim: (threads_per_block_stats, 1, 1),
+        shared_mem_bytes: 0
+    };
+
+    unsafe {
+        stream
+            .launch_builder(&compute_vector_stats_u2_packed_kernel)
+            .arg(&d_qv_u2)
+            .arg(&d_query_norm_l2)
+            .arg(&d_query_norm_l2_squared)
+            .arg(&challenge.difficulty.num_queries)
+            .arg(&challenge.vector_dims)
+            .launch(cfg_stats_qv)?;
+    }
+
+    stream.synchronize()?;
+
+*/
+
+    let elapsed_time_ms_1 = start_time_total.elapsed().as_micros() as f32 / 1000.0;
+
+    //
+    // ---------- Compute MAD Stats ---------- 
+    //
+
+    // MAD threshold on DB norms (unchanged logic)
+    let mut h_norms = stream.memcpy_dtov(&d_db_norm_l2)?;
+    h_norms.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    let mid = h_norms.len() / 2;
+    let median = if h_norms.len() % 2 == 0 {
+        (h_norms[mid - 1] + h_norms[mid]) / 2.0
+    } else {
+        h_norms[mid]
+    };
+
+    let mut deviations: Vec<f32> = h_norms.iter().map(|&x| (x - median).abs()).collect();
+    deviations.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    let mad = if deviations.len() % 2 == 0 {
+        (deviations[mid - 1] + deviations[mid]) / 2.0
+    } else {
+        deviations[mid]
+    };
+
+    let scale = env::var("SCALE_OVERRIDE")
+        .ok()
+        .and_then(|v| v.parse::<f32>().ok())
+        .unwrap_or_else(|| scale_factor(challenge.difficulty.num_queries as usize));
+    println!("stat_filter scale: {}", scale);
+
+    let norm_threshold = scale * mad * MAD_SCALE_NORMAL;
+    let elapsed_time_ms_2 = start_time_total.elapsed().as_micros() as f32 / 1000.0;
+
+    //
+    // ---------- Search ---------- 
+    //
+
+
+/*
+    // ---------- Unpacked 8-bit ---------- 
+
+    // === Search over reduced vectors → Top-K ===
+    // Shared memory usage in the kernel is: query (reduced_dims * sizeof(__half)) +
+    // per-thread K candidates: blockDim.x * K * (sizeof(int) + sizeof(float))
+    let base_query_bytes = reduced_dims as usize * std::mem::size_of::<u8>();
+    let per_thread_bytes = topk * (std::mem::size_of::<i32>() + std::mem::size_of::<f32>());
+    let smem_limit = prop.sharedMemPerBlock as usize; // typical 48KB or 96KB
+
+    // Choose a safe block size given shared memory
+    let mut threads_per_block: usize = 256; // start here; will shrink if needed
+    while base_query_bytes + threads_per_block * per_thread_bytes > smem_limit && threads_per_block > 32 {
+        threads_per_block >>= 1; // halve until it fits
+    }
+    if base_query_bytes + threads_per_block * per_thread_bytes > smem_limit {
+        return Err(anyhow!("Insufficient shared memory for topk={} with reduced_dims={} (need ~{}B, have {}B)",
+            topk, reduced_dims, base_query_bytes + threads_per_block * per_thread_bytes, smem_limit));
+    }
+    let threads_per_block = threads_per_block as u32;
+
+    // Device outputs: Top-K per query
+    let mut d_topk_indices = stream.alloc_zeros::<u32>((challenge.difficulty.num_queries as usize) * topk)?;
+    let mut d_topk_dist    = stream.alloc_zeros::<f32>((challenge.difficulty.num_queries as usize) * topk)?;
+
+    let shared_mem_bytes2 = (base_query_bytes + (threads_per_block as usize) * per_thread_bytes) as u32;
+
+    let cfg2 = LaunchConfig {
+        grid_dim: (challenge.difficulty.num_queries, 1, 1),
+        block_dim: (threads_per_block, 1, 1),
+        shared_mem_bytes: shared_mem_bytes2,
+    };
+
+    //---------------------------- Search top K ------------------------
+
+    let k_i32: i32 = topk as i32;
+
+    unsafe {
+        stream
+            .launch_builder(&find_topk_neighbors_kernel)
+            .arg(&d_qv_u8)                // query vectors (bins as u8)
+            .arg(&d_db_u8)                // database vectors (bins as u8)
+            .arg(&d_db_norm_l2)            // db ORIGINAL l2
+            .arg(&d_db_norm_l2_squared)    // db ORIGINAL l2^2
+            .arg(&mut d_topk_indices)      // OUT: [num_queries * K] indices
+            .arg(&mut d_topk_dist)         // OUT: [num_queries * K] distances
+            .arg(&k_i32)                   // K (runtime)
+            .arg(&challenge.max_distance)
+            .arg(&challenge.database_size) // N
+            .arg(&challenge.difficulty.num_queries)  // M
+            .arg(&challenge.vector_dims)
+            .arg(&norm_threshold)
+            .arg(&d_query_norm_l2)         // q l2 (f32)
+            .arg(&d_query_norm_l2_squared) // q l2^2 (f32)
+            .launch(cfg2)?;
+    }
+
+    stream.synchronize()?;
+
+*/
+
+
+    // base_query_bytes = D * 1 byte (unpacked query cached in shared)
+    let base_query_bytes = challenge.vector_dims as usize * std::mem::size_of::<u8>();
+    let per_thread_bytes = topk * (std::mem::size_of::<i32>() + std::mem::size_of::<f32>());
+    let smem_limit = prop.sharedMemPerBlock as usize;
+
+    let mut threads_per_block: usize = 256;
+    while base_query_bytes + threads_per_block * per_thread_bytes > smem_limit && threads_per_block > 32 {
+        threads_per_block >>= 1;
+    }
+    if base_query_bytes + threads_per_block * per_thread_bytes > smem_limit {
+        return Err(anyhow!(
+            "Insufficient shared memory for topk={} with dims={} (need ~{}B, have {}B)",
+            topk, challenge.vector_dims,
+            base_query_bytes + threads_per_block * per_thread_bytes, smem_limit
+        ));
+    }
+    let threads_per_block = threads_per_block as u32;
+
+    let mut d_topk_indices = stream.alloc_zeros::<i32>((challenge.difficulty.num_queries as usize) * topk)?;
+    let mut d_topk_dist    = stream.alloc_zeros::<f32>((challenge.difficulty.num_queries as usize) * topk)?;
+    
+    let shared_mem_bytes2 = (base_query_bytes + (threads_per_block as usize) * per_thread_bytes) as u32;
+
+    let cfg2 = LaunchConfig {
+        grid_dim: (challenge.difficulty.num_queries, 1, 1),
+        block_dim: (threads_per_block, 1, 1),
+        shared_mem_bytes: shared_mem_bytes2,
+    };
+
+    // Choose u4 or u2 variant:
+    let k_i32: i32 = topk as i32;
+
+    // ---------- 4-bit ----------
+    let find_topk_neighbors_u4_packed_kernel = module.load_function("find_topk_neighbors_u4_packed_kernel")?;
+    unsafe {
+        stream
+            .launch_builder(&find_topk_neighbors_u4_packed_kernel)
+            .arg(&d_qv_u4)                    // packed queries  [M * ((D+1)>>1)]
+            .arg(&d_db_u4)                    // packed db       [N * ((D+1)>>1)]
+            .arg(&d_db_norm_l2)               // norms from u4   [N]
+            .arg(&d_db_norm_l2_squared)       // norms^2         [N]
+            .arg(&mut d_topk_indices)         // [M*K] (int32)
+            .arg(&mut d_topk_dist)            // [M*K] (f32)
+            .arg(&k_i32)                      // K
+            .arg(&challenge.max_distance)     // cutoff or <=0
+            .arg(&challenge.database_size)    // N
+            .arg(&challenge.difficulty.num_queries) // M
+            .arg(&challenge.vector_dims)      // D
+            .arg(&norm_threshold)             // same as before
+            .arg(&d_query_norm_l2)            // from u4
+            .arg(&d_query_norm_l2_squared)    // from u4
+            .launch(cfg2)?;
+    }
+
+/*
+    // ---------- 2-bit ----------
+    let find_topk_neighbors_u2_packed_kernel = module.load_function("find_topk_neighbors_u2_packed_kernel")?;
+    unsafe {
+        stream
+            .launch_builder(&find_topk_neighbors_u2_packed_kernel)
+            .arg(&d_qv_u2)                    // packed queries  [M * ((D+3)>>2)]
+            .arg(&d_db_u2)                    // packed db       [N * ((D+3)>>2)]
+            .arg(&d_db_norm_l2)               // norms from u2   [N]
+            .arg(&d_db_norm_l2_squared)       // norms^2         [N]
+            .arg(&mut d_topk_indices)
+            .arg(&mut d_topk_dist)
+            .arg(&k_i32)
+            .arg(&challenge.max_distance)
+            .arg(&challenge.database_size)
+            .arg(&challenge.difficulty.num_queries)
+            .arg(&challenge.vector_dims)
+            .arg(&norm_threshold)
+            .arg(&d_query_norm_l2)            // from u2
+            .arg(&d_query_norm_l2_squared)    // from u2
+            .launch(cfg2)?;
+    }
+*/
+
+    stream.synchronize()?;
+
+
+
+    // Pull back top-K indices, build Top-1 for the Solution, and compute Recall@K if provided
+    let h_topk: Vec<i32> = stream.memcpy_dtov(&d_topk_indices)?;
+
+    let mut top1 = Vec::<usize>::with_capacity(challenge.difficulty.num_queries as usize);
+    for q in 0..(challenge.difficulty.num_queries as usize) {
+        let base = q * topk;
+        top1.push(h_topk[base] as usize); // assuming kernel writes sorted asc by distance
+    }
+
+    if let Some(gt) = expected_nn {
+        let total = gt.len().min(challenge.difficulty.num_queries as usize);
+        let mut hits = 0usize;
+        for q in 0..total {
+            let base = q * topk;
+            if h_topk[base..base + topk].iter().any(|&idx| idx as usize == gt[q]) {
+                hits += 1;
+            }
+        }
+        let recall_at_k = (hits as f64 / total as f64) * 100.0;
+        println!(
+            "Recall@{}: {:.2}% ({} / {} queries have GT in top-{})",
+            topk, recall_at_k, hits, total, topk
+        );
+    }
+
+
+/*
+
+    //---------------------------- Search top 1 ------------------------
+    //
+    let mut d_query_results = stream.alloc_zeros::<u32>(challenge.difficulty.num_queries as usize)?;
+
+
+    unsafe {
+        stream
+            .launch_builder(&find_nearest_neighbor_kernel)
+            .arg(&d_qv_u8)                // query vectors (bins as u8)
+            .arg(&d_db_u8)                // database vectors (bins as u8)
+            .arg(&d_db_norm_l2)            // db ORIGINAL l2
+            .arg(&d_db_norm_l2_squared)    // db ORIGINAL l2^2
+            .arg(&mut d_query_results)     // OUT: [num_queries] indices
+            .arg(&challenge.max_distance)
+            .arg(&challenge.database_size) // N
+            .arg(&challenge.difficulty.num_queries)  // M
+            .arg(&challenge.vector_dims)
+            .arg(&norm_threshold)
+            .arg(&d_query_norm_l2)         // q l2 (f32)
+            .arg(&d_query_norm_l2_squared) // q l2^2 (f32)
+            .launch(cfg2)?;
+    }
+
+    stream.synchronize()?;
+
+    // Just use 1 result per query
+    let raw_indexes: Vec<u32> = stream.memcpy_dtov(&d_query_results)?;
+    let indexes: Vec<usize> = raw_indexes.into_iter().map(|i| i as usize).collect();
+
+    */
+
+
+
+    let elapsed_time_ms = start_time_total.elapsed().as_micros() as f32 / 1000.0;
+
+
+    println!("===== stat_filter u8 ( Top-{} ) =====", topk);
+    println!(
+        "Time for nonce: {} ms (sum+stats: {} ms + mad_sort: {} ms + search: {} ms)",
+        elapsed_time_ms,
+        elapsed_time_ms_1,
+        elapsed_time_ms_2 - elapsed_time_ms_1,
+        elapsed_time_ms - elapsed_time_ms_2
+    );
+
+    //
+    // === Re-rank Top-K on FP32 (exact L2) ===
+    //
+
+
+    let start_time_rerank = std::time::Instant::now();
+
+    let refine_fn = module.load_function("refine_topk_rerank_kernel")?;
+
+    let threads_refine: u32 = 128;
+    let grid_refine = challenge.difficulty.num_queries;
+    let shared_refine = (challenge.vector_dims as usize * std::mem::size_of::<f32>()
+                        + threads_refine as usize * std::mem::size_of::<f32>()) as u32;
+
+    let mut d_refined_index    = stream.alloc_zeros::<i32>(challenge.difficulty.num_queries as usize)?;
+    let mut d_refined_distance = stream.alloc_zeros::<f32>(challenge.difficulty.num_queries as usize)?;
+    let k_i32: i32 = topk as i32;
+
+    let cfg_refine = LaunchConfig {
+        grid_dim: (grid_refine, 1, 1),
+        block_dim: (threads_refine, 1, 1),
+        shared_mem_bytes: shared_refine,
+    };
+
+    unsafe {
+        stream
+            .launch_builder(&refine_fn)
+            .arg(&challenge.d_query_vectors)   // FP32 queries (original dim)
+            .arg(&challenge.d_database_vectors)// FP32 DB (original dim)
+            .arg(&d_topk_indices)              // [num_queries * K] (i32)
+            .arg(&mut d_refined_index)         // OUT best per query
+            .arg(&mut d_refined_distance)      // OUT best distance per query
+            .arg(&challenge.difficulty.num_queries)
+            .arg(&challenge.vector_dims)       // original dim (e.g., 128)
+            .arg(&k_i32)
+            .launch(cfg_refine)?;
+    }
+    stream.synchronize()?;
+
+    // Use refined Top-1 as the final Solution
+    let top1_refined: Vec<i32> = stream.memcpy_dtov(&d_refined_index)?;
+    let mut final_idxs = Vec::<usize>::with_capacity(top1_refined.len());
+    for &idx in &top1_refined {
+        final_idxs.push(idx as usize);
+    }
+
+    let elapsed_time_rerank_ms = start_time_rerank.elapsed().as_micros() as f32 / 1000.0;
+
+    println!(
+        "Time to re-rank top {} closest: {:.3} ms)",
+        topk,
+        elapsed_time_rerank_ms
+    );
+
+    Ok(Some(Solution { indexes: final_idxs }))
+    //Ok(Some(Solution { indexes: top1 }))
+    //Ok(Some(Solution { indexes: indexes }))
+}
+
+//------------ MAD Scale Factor Adjustment -------------
+
+fn scale_factor(num_queries: usize) -> f32 {
+    match num_queries {
+        q if q <= 700 => 0.20,
+        q if q <= 1000 => 0.20 + (q as f32 - 700.0) * (0.10 / 300.0),       // 0.30 at 1000
+        q if q <= 1500 => 0.30 + (q as f32 - 1000.0) * (0.20 / 500.0),      // 0.50 at 1500
+        q if q <= 2000 => 0.50 + (q as f32 - 1500.0) * (0.44 / 500.0),      // 0.94 at 2000
+        q if q <= 2500 => 0.94 + (q as f32 - 2000.0) * (1.08 / 500.0),      // 2.02 at 2500
+        _ => 1.00,
+    }
+}
+
+
+fn read_topk() -> usize {
+    env::var("STAT_FILTER_TOPK")
+        .ok()
+        .and_then(|s| s.trim().parse::<usize>().ok())
+        .filter(|&v| v > 0)
+        .unwrap_or(TOPK)
+}
+
+//----------------- 4-bit conversion -------------------
+
+
+#[inline]
+pub fn code4_load(row: &[u8], j: usize) -> u8 {
+    let b = row[j >> 1];
+    if (j & 1) == 0 { b & 0x0F } else { b >> 4 }
+}
+
+#[inline]
+pub fn code4_store(row: &mut [u8], j: usize, code: u8) {
+    let idx = j >> 1;
+    let c = code & 0x0F;
+    let b = row[idx];
+    row[idx] = if (j & 1) == 0 {
+        // even j → low nibble
+        (b & 0xF0) | c
+    } else {
+        // odd j → high nibble
+        (b & 0x0F) | (c << 4)
+    };
+}
+
+pub fn pack_codes4_row(codes4_plain: &[u8], packed: &mut [u8]) {
+    let d = codes4_plain.len();
+    assert_eq!(packed.len(), (d + 1) >> 1);
+    // zero row (important for odd D, so unused nibble stays 0)
+    for b in packed.iter_mut() { *b = 0; }
+    for j in 0..d {
+        code4_store(packed, j, codes4_plain[j] & 0x0F);
+    }
+}
+
+pub fn unpack_codes4_row(packed: &[u8], codes4_plain: &mut [u8]) {
+    let d = codes4_plain.len();
+    assert_eq!(packed.len(), (d + 1) >> 1);
+    for j in 0..d {
+        codes4_plain[j] = code4_load(packed, j);
+    }
+}
+
+pub fn pack_codes4_all(codes4_plain: &[u8], n: usize, d: usize) -> Vec<u8> {
+    assert_eq!(codes4_plain.len(), n * d);
+    let row_bytes = (d + 1) >> 1;
+    let mut out = vec![0u8; n * row_bytes];
+    for i in 0..n {
+        let src = &codes4_plain[i*d .. (i+1)*d];
+        let dst = &mut out[i*row_bytes .. (i+1)*row_bytes];
+        pack_codes4_row(src, dst);
+    }
+    out
+}
+
+pub fn unpack_codes4_all(packed: &[u8], n: usize, d: usize) -> Vec<u8> {
+    let row_bytes = (d + 1) >> 1;
+    assert_eq!(packed.len(), n * row_bytes);
+    let mut out = vec![0u8; n * d];
+    for i in 0..n {
+        let src = &packed[i*row_bytes .. (i+1)*row_bytes];
+        let dst = &mut out[i*d .. (i+1)*d];
+        unpack_codes4_row(src, dst);
+    }
+    out
+}
+
+#[inline]
+fn unpack_u4_prefix(row_packed: &[u8], dims: usize, preview: usize) -> Vec<u8> {
+    let n = preview.min(dims);
+    let mut out = Vec::with_capacity(n);
+    for j in 0..n {
+        let b = row_packed[j >> 1];
+        let code = if (j & 1) == 0 { b & 0x0F } else { b >> 4 };
+        out.push(code);
+    }
+    out
+}
+
+#[inline]
+fn unpack_u2_prefix(row_packed: &[u8], dims: usize, preview: usize) -> Vec<u8> {
+    let n = preview.min(dims);
+    let mut out = Vec::with_capacity(n);
+    for j in 0..n {
+        let b = row_packed[j >> 2];
+        let shift = (j & 3) * 2;
+        let code = (b >> shift) & 0x03;
+        out.push(code);
+    }
+    out
+}
+
+
+
+
+
+

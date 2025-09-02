@@ -1,0 +1,440 @@
+/*!
+Copyright 2025 Granite Labs LLC
+
+Identity of Submitter [name of person or entity that submits the Work to TIG]
+
+Licensed under the TIG Inbound Game License v2.0 or (at your option) any later
+version (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+
+https://github.com/tig-foundation/tig-monorepo/tree/main/docs/licenses
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the specific
+language governing permissions and limitations under the License.
+*/
+
+//
+// stat_filter
+//
+// Filtering based on Median Absolute Deviation (MAD):
+// We compute the median of all L2 norms, then calculate the MAD (median of
+// absolute deviations from the median). The threshold is set to:
+//      norm_threshold = scale_factor × MAD × 1.4826
+// The factor 1.4826 scales MAD to match the standard deviation for normally
+// distributed data. This makes the filter more robust to outliers compared to
+// filtering methods based on mean and standard deviation, which are more
+// sensitive to extreme values.
+//
+// Reference:
+// - NIST Engineering Statistics Handbook:
+//   https://www.itl.nist.gov/div898/handbook/eda/section3/eda35h.htm
+// - See also: https://www.itl.nist.gov/div898/handbook/eda/section3/eda356.htm
+//
+
+/*!
+Copyright 2025 Granite Labs LLC
+...
+*/
+#include <float.h>
+#include <math_constants.h>   // defines CUDART_INF_F, CUDART_NAN_F, etc.
+
+//#define USE_4_BITS
+
+
+//-------------------- Dimension Stats --------------------------
+
+__device__ inline void atomicMaxFloat(float* addr, float val) {
+    // Safe for non-negative floats (your data is 0..255)
+    int* addr_i = reinterpret_cast<int*>(addr);
+    int  old    = *addr_i, assumed;
+    do {
+        assumed = old;
+        if (__int_as_float(assumed) >= val) break;
+        old = atomicCAS(addr_i, assumed, __float_as_int(val));
+    } while (assumed != old);
+}
+
+extern "C" __global__ void compute_dim_stats_kernel(
+    const float* __restrict__ db,  // [num_vecs * dims], original floats
+    float* __restrict__ out_max,   // [dims], init to 0 on host
+    int num_vecs,
+    int dims)
+{
+    int v = blockIdx.x * blockDim.x + threadIdx.x;
+    if (v >= num_vecs) return;
+
+    const float* row = db + (size_t)v * dims;
+    for (int d = 0; d < dims; ++d) {
+        float x = row[d];
+        atomicMaxFloat(&out_max[d], x);
+    }
+}
+
+#if 0
+extern "C" __global__ void compute_dim_stats_kernel(
+    const float* __restrict__ db,  // [num_vecs * dims], original floats
+    float* __restrict__ out_sum,   // [dims], init to 0 on host
+    float* __restrict__ out_max,   // [dims], init to 0 on host
+    int num_vecs,
+    int dims)
+{
+    int v = blockIdx.x * blockDim.x + threadIdx.x;
+    if (v >= num_vecs) return;
+
+    const float* row = db + (size_t)v * dims;
+    for (int d = 0; d < dims; ++d) {
+        float x = row[d];
+        atomicAdd(&out_sum[d], x);
+        atomicMaxFloat(&out_max[d], x);
+    }
+}
+#endif
+
+
+//-------------------- Calculate Dimension Divisors -------------
+
+// Build per-dimension divisors from max: s[d] = max(0.90 * max[d] / 16, 1.0)
+#ifndef FRAC_OF_MAX
+//#define FRAC_OF_MAX 1.00f
+//#define FRAC_OF_MAX 0.90f
+#define FRAC_OF_MAX 0.80f
+//#define FRAC_OF_MAX 0.70f
+//#define FRAC_OF_MAX 0.60f
+#endif
+#ifndef LEVELS
+#  ifdef USE_4_BITS
+#    define LEVELS 16.0f
+#  else
+#    define LEVELS 4.0f
+#  endif
+#endif
+#ifndef MIN_STEP
+// This allows us to divide by the result ... no zeros
+#define MIN_STEP 1.0f
+#endif
+
+extern "C" __global__ void build_divisors_from_max_kernel(
+    const float* __restrict__ dim_max, // [dims]
+    float* __restrict__ s,             // [dims] (output... pre-allocated)
+    int dims)
+{
+    int d = blockIdx.x * blockDim.x + threadIdx.x;
+    if (d >= dims) return;
+
+    float mx = fmaxf(0.0f, dim_max[d]);                  // guard negatives/NaN-ish
+    mx = fminf(255.0f, mx);                              // guard against overage
+    float sd = FRAC_OF_MAX * mx / LEVELS;                // example: 0.90 * max / 16
+    s[d] = fmaxf(sd, MIN_STEP);                          // floor at 1.0
+
+    //printf("d:%d  s[d]:%f  max[d]:%f\n",d,s[d],dim_max[d]);
+}
+
+
+
+
+//-------------------- Dimension Aware Conversion ---------------
+
+#if 1
+#ifndef CLIP_MAX
+#define CLIP_MAX 255.0f
+#endif
+
+extern "C" __global__ void f32_to_u8_scaled_perdim_kernel(
+    const float*  __restrict__ in,   // [num_vecs * dims], original floats
+    const float*  __restrict__ s,    // [dims], per-dim divisors
+    uint8_t*       __restrict__ out,  // [num_vecs * dims], scaled u8
+    int num_vecs,
+    int dims)
+{
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int n   = num_vecs * dims;
+    if (idx >= n) return;
+
+    int   d  = idx % dims;
+    float sj = s[d];  // s[d] already has floor 1.0f
+    // Guard against bad/zero divisors
+    //sj = fmaxf(sj, 1e-12f);
+
+    float x  = in[idx];
+    float y  = fminf(fmaxf(x, 0.0f), CLIP_MAX);
+
+    if (y <= 0.0f) { out[idx] = 0; return; }
+
+    int   bin    = __float2int_ru(y / sj);   // ceil(y / s[d])
+#ifdef USE_4_BITS
+    bin = fminf(bin, 15.0f);            // for 16 levels
+#else
+    bin = fminf(bin, 3.0f);            // for 4 levels
+#endif
+
+    out[idx] = bin;
+}
+
+
+#endif
+
+
+//----------------- Vector Stats Before Conversion ---------------
+
+
+extern "C" __global__ void compute_vector_stats_kernel(
+    const float* vectors,
+    float* norm_l2,
+    float* norm_l2_squared,
+    int num_vectors,
+    const int vector_size
+)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    double norm_sq = 0.0;
+
+    if (i < num_vectors) {
+        int idx = i * vector_size;
+        for (int j = 0; j < vector_size; j++) {
+            double v = vectors[idx + j];
+            norm_sq = fmaf(v, v, norm_sq);
+        }
+        norm_l2_squared[i] = norm_sq;
+        norm_l2[i] = sqrt(norm_sq);
+    }
+}
+
+
+//----------------- Vector Stats After Conversion ---------------
+
+extern "C" __global__ void compute_vector_stats_u8_kernel(
+    const uint8_t* __restrict__ vectors,  // [num_vecs * dims]
+    float* __restrict__ norm_l2,         // [num_vecs]
+    float* __restrict__ norm_l2_squared, // [num_vecs]
+    int num_vecs,
+    int dims)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= num_vecs) return;
+
+    const uint8_t* row = vectors + (size_t)i * dims;
+
+    // Double accumulator for stability on long dims
+    double acc = 0.0;
+    #pragma unroll 8
+    for (int j = 0; j < dims; ++j) {
+        float v = (float)(row[j]);
+        acc = fma((double)v, (double)v, acc);
+    }
+    norm_l2_squared[i] = (float)acc;
+    norm_l2[i]         = sqrtf((float)acc);
+}
+
+
+
+//----------------- Nearest Neighbor Search ---------------------
+
+extern "C" __global__ void find_nearest_neighbor_kernel(
+    const uint8_t* __restrict__ query_vectors,
+    const uint8_t* __restrict__ vector_database,
+    const float* __restrict__ norm_l2,
+    const float* __restrict__ norm_l2_squared,
+    int* __restrict__ query_results,
+    const float max_distance,
+    const int vector_database_len,
+    const int query_vectors_len,
+    const int vector_size,
+    const float precomputed_threshold,
+    const float* __restrict__ query_norm_l2,
+    const float* __restrict__ query_norm_l2_squared
+)
+{
+    int q = blockIdx.x;
+    if (q >= query_vectors_len) return;
+
+    __shared__ float norm_threshold;
+    __shared__ float query_norm_sq;
+    __shared__ float query_norm;
+
+    extern __shared__ char shared_memory[];
+    int*   smem_candidate_index    = (int*)shared_memory;
+    float* smem_candidate_distance = (float*)(smem_candidate_index + blockDim.x);
+    uint8_t* smem_query_vector      = (uint8_t*)(smem_candidate_distance + blockDim.x);
+
+    if (threadIdx.x == 0) {
+        norm_threshold = precomputed_threshold;
+        query_norm_sq  = query_norm_l2_squared[q];
+        query_norm     = query_norm_l2[q];
+    }
+
+    for (int j = threadIdx.x; j < vector_size; j += blockDim.x) {
+        smem_query_vector[j] = query_vectors[q * vector_size + j];
+    }
+    __syncthreads();
+
+    float best_distance = FLT_MAX;
+    int   best_index    = INT_MAX;
+
+    for (int i = threadIdx.x; i < vector_database_len; i += blockDim.x) {
+        float norm_diff = fabsf(norm_l2[i] - query_norm);
+        if (norm_diff <= norm_threshold) {
+            const uint8_t* __restrict__ qv = smem_query_vector;
+            const uint8_t* __restrict__ db = &vector_database[i * vector_size];
+            float dot = 0.0f;
+#pragma unroll 8
+            for (int j = 0; j < vector_size; j++) {
+                dot = fmaf((float)(qv[j]), (float)(db[j]), dot);
+            }
+            float distance_sq = query_norm_sq + norm_l2_squared[i] - 2.0f * dot;
+            if (distance_sq < best_distance) {
+                best_index = i;
+                best_distance = distance_sq;
+            }
+        }
+    }
+
+    smem_candidate_index[threadIdx.x]    = best_index;
+    smem_candidate_distance[threadIdx.x] = best_distance;
+    __syncthreads();
+
+    for (int stride = blockDim.x / 2; stride > 0; stride /= 2) {
+        if (threadIdx.x < stride) {
+            if (smem_candidate_distance[threadIdx.x + stride] < smem_candidate_distance[threadIdx.x]) {
+                smem_candidate_distance[threadIdx.x] = smem_candidate_distance[threadIdx.x + stride];
+                smem_candidate_index[threadIdx.x]    = smem_candidate_index[threadIdx.x + stride];
+            }
+        }
+        __syncthreads();
+    }
+
+    if (threadIdx.x == 0) {
+        query_results[q] = smem_candidate_index[0];
+    }
+}
+
+// Keep top-K neighbors (small K like 10–20). One block per query.
+#ifndef KMAX
+#define KMAX 32  // must be >= runtime K (e.g., 20)
+//#define KMAX 100  // must be >= runtime K (e.g., 20)
+//#define KMAX 20  // must be >= runtime K (e.g., 20)
+#endif
+
+__device__ __forceinline__ void topk_try_insert(
+    float d, int i, float* dists, int* idx, int K)
+{
+    // Replace current worst if this candidate is better (smaller distance).
+    int worst = 0;
+    float worst_d = dists[0];
+    #pragma unroll
+    for (int t = 1; t < K; ++t) {
+        if (dists[t] > worst_d) { worst = t; worst_d = dists[t]; }
+    }
+    if (d < worst_d) { dists[worst] = d; idx[worst] = i; }
+}
+
+extern "C" __global__ void find_topk_neighbors_kernel(
+    const uint8_t* __restrict__ query_vectors,
+    const uint8_t* __restrict__ vector_database,
+    const float* __restrict__ norm_l2,
+    const float* __restrict__ norm_l2_squared,
+    int*   __restrict__ topk_indices,     // [query_vectors_len * K]
+    float* __restrict__ topk_distances,   // [query_vectors_len * K]
+    const int   K,                        // e.g., 10 or 20 (K <= KMAX)
+    const float max_distance,             // optional extra cutoff; <=0 to ignore
+    const int   vector_database_len,
+    const int   query_vectors_len,
+    const int   vector_size,
+    const float precomputed_threshold,
+    const float* __restrict__ query_norm_l2,
+    const float* __restrict__ query_norm_l2_squared
+)
+{
+    int q = blockIdx.x;
+    if (q >= query_vectors_len) return;
+    if (K > KMAX) return; // or assert
+
+    __shared__ float norm_threshold;
+    __shared__ float query_norm_sq;
+    __shared__ float query_norm;
+
+    extern __shared__ char shared_memory[];
+    // Per-thread candidates (blockDim.x * K)
+    int*   sm_idx  = (int*)shared_memory;
+    float* sm_dist = (float*)(sm_idx + blockDim.x * K);
+    uint8_t* sm_qv  = (uint8_t*)(sm_dist + blockDim.x * K);
+
+    if (threadIdx.x == 0) {
+        norm_threshold = precomputed_threshold;
+        query_norm_sq  = query_norm_l2_squared[q];
+        query_norm     = query_norm_l2[q];
+    }
+
+    // Cache query vector in shared memory
+    for (int j = threadIdx.x; j < vector_size; j += blockDim.x) {
+        sm_qv[j] = query_vectors[q * vector_size + j];
+    }
+    __syncthreads();
+
+    // Thread-local top-K
+    float tk_dist[KMAX];
+    int   tk_idx[KMAX];
+    #pragma unroll
+    for (int t = 0; t < K; ++t) { tk_dist[t] = CUDART_INF_F; tk_idx[t] = -1; }
+
+    // Scan database subset owned by this thread
+    for (int i = threadIdx.x; i < vector_database_len; i += blockDim.x) {
+        float norm_diff = fabsf(norm_l2[i] - query_norm);
+        if (norm_diff <= norm_threshold) {
+            const uint8_t* __restrict__ qv = sm_qv;
+            const uint8_t* __restrict__ db = &vector_database[i * vector_size];
+
+            float dot = 0.0f;
+            #pragma unroll 8
+            for (int j = 0; j < vector_size; ++j) {
+                dot = fmaf((float)(qv[j]), (float)(db[j]), dot);
+            }
+            float d2 = query_norm_sq + norm_l2_squared[i] - 2.0f * dot;
+            d2 = fmaxf(d2, 0.0f); // clamp to avoid tiny negative due to quantization overshoot
+            if ((max_distance <= 0.0f) || (d2 <= max_distance)) {
+                topk_try_insert(d2, i, tk_dist, tk_idx, K);
+            }
+        }
+    }
+
+    // Write each thread's K candidates to shared memory
+    int base = threadIdx.x * K;
+    #pragma unroll
+    for (int t = 0; t < K; ++t) {
+        sm_idx[base + t]  = tk_idx[t];
+        sm_dist[base + t] = tk_dist[t];
+    }
+    __syncthreads();
+
+    // One thread merges block candidates -> final top-K for this query
+    if (threadIdx.x == 0) {
+        float best_d[KMAX];
+        int   best_i[KMAX];
+        #pragma unroll
+        for (int t = 0; t < K; ++t) { best_d[t] = CUDART_INF_F; best_i[t] = -1; }
+
+        int N = blockDim.x * K;
+        for (int n = 0; n < N; ++n) {
+            float d = sm_dist[n];
+            int   i = sm_idx[n];
+            if (i >= 0 && isfinite(d)) {
+                topk_try_insert(d, i, best_d, best_i, K);
+            }
+        }
+        // Optional: sort ascending by distance for nicer output
+        for (int a = 0; a < K-1; ++a)
+            for (int b = a+1; b < K; ++b)
+                if (best_d[b] < best_d[a]) { float td=best_d[a]; best_d[a]=best_d[b]; best_d[b]=td;
+                                             int ti=best_i[a]; best_i[a]=best_i[b]; best_i[b]=ti; }
+
+        // Write out
+        int out_base = q * K;
+        for (int t = 0; t < K; ++t) {
+            topk_indices[out_base + t]   = best_i[t];
+            topk_distances[out_base + t] = best_d[t];
+        }
+    }
+}
+
+

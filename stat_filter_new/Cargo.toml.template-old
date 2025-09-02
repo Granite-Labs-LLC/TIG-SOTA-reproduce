@@ -1,0 +1,14 @@
+[package]
+name = "vector_search_evaluator"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.81"
+tig-challenges = { git = "https://github.com/tig-foundation/tig-monorepo.git", branch = "vector_search/${ALGORITHM}", features = ["vector_search"] }
+tig-algorithms = { git = "https://github.com/tig-foundation/tig-monorepo.git", branch = "vector_search/${ALGORITHM}", features = ["vector_search"] }
+cudarc = { version = "0.16.2", features = ["cuda-version-from-build-system"] }
+
+[build-dependencies]
+tig-challenges = { git = "https://github.com/tig-foundation/tig-monorepo.git", branch = "vector_search/${ALGORITHM}", features = ["vector_search"] }
+tig-algorithms = { git = "https://github.com/tig-foundation/tig-monorepo.git", branch = "vector_search/${ALGORITHM}", features = ["vector_search"] }

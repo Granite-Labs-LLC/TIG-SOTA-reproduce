@@ -1,0 +1,7 @@
+{
+  global:
+    entry_point;
+    __fuel_remaining;
+    __runtime_signature;
+  local: *;
+};

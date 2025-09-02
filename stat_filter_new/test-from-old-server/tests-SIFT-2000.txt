@@ -1,0 +1,594 @@
+========== Searching ../data/SIFT/ queries=2000 k=1 m=0 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0
+Recall@1: 73.90% (1478 / 2000 queries have GT in top-1)
+===== stat_filter bitslice 4-bit ( Top-1 ) =====
+Time for nonce: 48.811 ms (sum+stats: 14.275 ms + mad_sort: 0.847 ms + slice: 0.180 ms + search: 33.689 ms)
+Time to re-rank top 1 closest: 0.102 ms)
+Recall rate: 73.90% (1478 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 195.62317, optimal_dist: 194.50085, time:   51 ms
+========== Searching ../data/SIFT/ queries=2000 k=1 m=0.3 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.3
+Recall@1: 30.00% (600 / 2000 queries have GT in top-1)
+===== stat_filter bitslice 4-bit ( Top-1 ) =====
+Time for nonce: 69.267 ms (sum+stats: 6.563 ms + mad_sort: 33.934 ms + slice: 0.433 ms + search: 28.770 ms)
+Time to re-rank top 1 closest: 0.134 ms)
+Recall rate: 30.00% (600 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 208.04622, optimal_dist: 194.50085, time:   71 ms
+========== Searching ../data/SIFT/ queries=2000 k=1 m=0.31 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.31
+Recall@1: 30.80% (616 / 2000 queries have GT in top-1)
+===== stat_filter bitslice 4-bit ( Top-1 ) =====
+Time for nonce: 110.632 ms (sum+stats: 50.056 ms + mad_sort: 22.057 ms + slice: 0.322 ms + search: 38.519 ms)
+Time to re-rank top 1 closest: 0.184 ms)
+Recall rate: 30.80% (616 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 207.54262, optimal_dist: 194.50069, time:  115 ms
+========== Searching ../data/SIFT/ queries=2000 k=1 m=0.32 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.32
+Recall@1: 31.55% (631 / 2000 queries have GT in top-1)
+===== stat_filter bitslice 4-bit ( Top-1 ) =====
+Time for nonce: 65.259 ms (sum+stats: 5.658 ms + mad_sort: 30.130 ms + slice: 0.210 ms + search: 29.471 ms)
+Time to re-rank top 1 closest: 0.125 ms)
+Recall rate: 31.55% (631 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 207.1999, optimal_dist: 194.50075, time:   67 ms
+========== Searching ../data/SIFT/ queries=2000 k=1 m=0.4 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.4
+Recall@1: 37.00% (740 / 2000 queries have GT in top-1)
+===== stat_filter bitslice 4-bit ( Top-1 ) =====
+Time for nonce: 62.787 ms (sum+stats: 10.767 ms + mad_sort: 21.120 ms + slice: 0.235 ms + search: 30.900 ms)
+Time to re-rank top 1 closest: 0.094 ms)
+Recall rate: 37.00% (740 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 205.0859, optimal_dist: 194.50075, time:   66 ms
+========== Searching ../data/SIFT/ queries=2000 k=1 m=0.5 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.5
+Recall@1: 44.10% (882 / 2000 queries have GT in top-1)
+===== stat_filter bitslice 4-bit ( Top-1 ) =====
+Time for nonce: 60.278 ms (sum+stats: 8.946 ms + mad_sort: 21.440 ms + slice: 0.373 ms + search: 29.892 ms)
+Time to re-rank top 1 closest: 0.084 ms)
+Recall rate: 44.10% (882 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 202.92465, optimal_dist: 194.5008, time:   62 ms
+========== Searching ../data/SIFT/ queries=2000 k=1 m=0.7 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.7
+Recall@1: 55.75% (1115 / 2000 queries have GT in top-1)
+===== stat_filter bitslice 4-bit ( Top-1 ) =====
+Time for nonce: 55.612 ms (sum+stats: 5.746 ms + mad_sort: 21.215 ms + slice: 0.229 ms + search: 28.651 ms)
+Time to re-rank top 1 closest: 0.117 ms)
+Recall rate: 55.75% (1115 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 199.62822, optimal_dist: 194.50082, time:   57 ms
+========== Searching ../data/SIFT/ queries=2000 k=1 m=1.0 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 1
+Recall@1: 66.20% (1324 / 2000 queries have GT in top-1)
+===== stat_filter bitslice 4-bit ( Top-1 ) =====
+Time for nonce: 56.304 ms (sum+stats: 6.202 ms + mad_sort: 21.216 ms + slice: 0.217 ms + search: 28.886 ms)
+Time to re-rank top 1 closest: 0.110 ms)
+Recall rate: 66.20% (1324 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 197.05576, optimal_dist: 194.50085, time:   58 ms
+========== Searching ../data/SIFT/ queries=2000 k=1 m=1.5 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 1.5
+Recall@1: 72.30% (1446 / 2000 queries have GT in top-1)
+===== stat_filter bitslice 4-bit ( Top-1 ) =====
+Time for nonce: 59.216 ms (sum+stats: 6.593 ms + mad_sort: 21.357 ms + slice: 0.205 ms + search: 31.266 ms)
+Time to re-rank top 1 closest: 0.070 ms)
+Recall rate: 72.30% (1446 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 195.9451, optimal_dist: 194.5008, time:   61 ms
+========== Searching ../data/SIFT/ queries=2000 k=4 m=0 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0
+Recall@4: 97.55% (1951 / 2000 queries have GT in top-4)
+===== stat_filter bitslice 4-bit ( Top-4 ) =====
+Time for nonce: 49.492 ms (sum+stats: 5.487 ms + mad_sort: 0.689 ms + slice: 0.341 ms + search: 43.316 ms)
+Time to re-rank top 4 closest: 0.129 ms)
+Recall rate: 96.85% (1937 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 194.55855, optimal_dist: 194.50081, time:   52 ms
+========== Searching ../data/SIFT/ queries=2000 k=4 m=0.3 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.3
+Recall@4: 34.60% (692 / 2000 queries have GT in top-4)
+===== stat_filter bitslice 4-bit ( Top-4 ) =====
+Time for nonce: 56.262 ms (sum+stats: 5.852 ms + mad_sort: 21.509 ms + slice: 0.266 ms + search: 28.901 ms)
+Time to re-rank top 4 closest: 0.104 ms)
+Recall rate: 34.20% (684 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 207.09856, optimal_dist: 194.50081, time:   58 ms
+========== Searching ../data/SIFT/ queries=2000 k=4 m=0.31 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.31
+Recall@4: 35.55% (711 / 2000 queries have GT in top-4)
+===== stat_filter bitslice 4-bit ( Top-4 ) =====
+Time for nonce: 54.285 ms (sum+stats: 5.552 ms + mad_sort: 21.061 ms + slice: 0.172 ms + search: 27.672 ms)
+Time to re-rank top 4 closest: 0.091 ms)
+Recall rate: 35.15% (703 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 206.59367, optimal_dist: 194.50085, time:   56 ms
+========== Searching ../data/SIFT/ queries=2000 k=4 m=0.32 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.32
+Recall@4: 36.45% (729 / 2000 queries have GT in top-4)
+===== stat_filter bitslice 4-bit ( Top-4 ) =====
+Time for nonce: 56.690 ms (sum+stats: 6.220 ms + mad_sort: 21.348 ms + slice: 0.333 ms + search: 29.122 ms)
+Time to re-rank top 4 closest: 0.115 ms)
+Recall rate: 36.05% (721 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 206.24364, optimal_dist: 194.50081, time:   59 ms
+========== Searching ../data/SIFT/ queries=2000 k=4 m=0.4 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.4
+Recall@4: 43.90% (878 / 2000 queries have GT in top-4)
+===== stat_filter bitslice 4-bit ( Top-4 ) =====
+Time for nonce: 66.191 ms (sum+stats: 15.368 ms + mad_sort: 22.337 ms + slice: 0.274 ms + search: 28.486 ms)
+Time to re-rank top 4 closest: 0.087 ms)
+Recall rate: 43.45% (869 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 204.04932, optimal_dist: 194.50073, time:   68 ms
+========== Searching ../data/SIFT/ queries=2000 k=4 m=0.5 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.5
+Recall@4: 52.80% (1056 / 2000 queries have GT in top-4)
+===== stat_filter bitslice 4-bit ( Top-4 ) =====
+Time for nonce: 65.125 ms (sum+stats: 5.948 ms + mad_sort: 20.908 ms + slice: 0.167 ms + search: 38.269 ms)
+Time to re-rank top 4 closest: 0.191 ms)
+Recall rate: 52.30% (1046 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 201.8497, optimal_dist: 194.50078, time:   68 ms
+========== Searching ../data/SIFT/ queries=2000 k=4 m=0.7 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.7
+Recall@4: 68.30% (1366 / 2000 queries have GT in top-4)
+===== stat_filter bitslice 4-bit ( Top-4 ) =====
+Time for nonce: 62.748 ms (sum+stats: 10.120 ms + mad_sort: 21.843 ms + slice: 0.217 ms + search: 30.785 ms)
+Time to re-rank top 4 closest: 0.143 ms)
+Recall rate: 67.75% (1355 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 198.64018, optimal_dist: 194.50084, time:   65 ms
+========== Searching ../data/SIFT/ queries=2000 k=4 m=1.0 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 1
+Recall@4: 84.25% (1685 / 2000 queries have GT in top-4)
+===== stat_filter bitslice 4-bit ( Top-4 ) =====
+Time for nonce: 64.790 ms (sum+stats: 6.233 ms + mad_sort: 20.940 ms + slice: 0.256 ms + search: 37.617 ms)
+Time to re-rank top 4 closest: 0.257 ms)
+Recall rate: 83.65% (1673 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 196.06, optimal_dist: 194.50076, time:   67 ms
+========== Searching ../data/SIFT/ queries=2000 k=4 m=1.5 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 1.5
+Recall@4: 94.30% (1886 / 2000 queries have GT in top-4)
+===== stat_filter bitslice 4-bit ( Top-4 ) =====
+Time for nonce: 63.383 ms (sum+stats: 11.995 ms + mad_sort: 20.754 ms + slice: 0.168 ms + search: 30.634 ms)
+Time to re-rank top 4 closest: 0.081 ms)
+Recall rate: 93.60% (1872 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 194.90768, optimal_dist: 194.50081, time:   65 ms
+========== Searching ../data/SIFT/ queries=2000 k=5 m=0 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0
+Recall@5: 98.50% (1970 / 2000 queries have GT in top-5)
+===== stat_filter bitslice 4-bit ( Top-5 ) =====
+Time for nonce: 40.578 ms (sum+stats: 6.246 ms + mad_sort: 0.535 ms + slice: 0.210 ms + search: 33.797 ms)
+Time to re-rank top 5 closest: 0.125 ms)
+Recall rate: 97.80% (1956 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 194.53441, optimal_dist: 194.50076, time:   44 ms
+========== Searching ../data/SIFT/ queries=2000 k=5 m=0.3 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.3
+Recall@5: 34.65% (693 / 2000 queries have GT in top-5)
+===== stat_filter bitslice 4-bit ( Top-5 ) =====
+Time for nonce: 57.729 ms (sum+stats: 5.788 ms + mad_sort: 21.613 ms + slice: 0.192 ms + search: 30.328 ms)
+Time to re-rank top 5 closest: 0.118 ms)
+Recall rate: 34.25% (685 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 207.07198, optimal_dist: 194.50084, time:   60 ms
+========== Searching ../data/SIFT/ queries=2000 k=5 m=0.31 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.31
+Recall@5: 35.60% (712 / 2000 queries have GT in top-5)
+===== stat_filter bitslice 4-bit ( Top-5 ) =====
+Time for nonce: 57.455 ms (sum+stats: 5.611 ms + mad_sort: 21.227 ms + slice: 0.194 ms + search: 30.617 ms)
+Time to re-rank top 5 closest: 0.098 ms)
+Recall rate: 35.20% (704 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 206.56905, optimal_dist: 194.50084, time:   60 ms
+========== Searching ../data/SIFT/ queries=2000 k=5 m=0.32 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.32
+Recall@5: 36.50% (730 / 2000 queries have GT in top-5)
+===== stat_filter bitslice 4-bit ( Top-5 ) =====
+Time for nonce: 55.672 ms (sum+stats: 5.925 ms + mad_sort: 21.339 ms + slice: 0.283 ms + search: 28.408 ms)
+Time to re-rank top 5 closest: 0.085 ms)
+Recall rate: 36.10% (722 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 206.22212, optimal_dist: 194.50081, time:   58 ms
+========== Searching ../data/SIFT/ queries=2000 k=5 m=0.4 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.4
+Recall@5: 44.15% (883 / 2000 queries have GT in top-5)
+===== stat_filter bitslice 4-bit ( Top-5 ) =====
+Time for nonce: 68.995 ms (sum+stats: 18.955 ms + mad_sort: 21.588 ms + slice: 0.232 ms + search: 28.452 ms)
+Time to re-rank top 5 closest: 0.109 ms)
+Recall rate: 43.65% (873 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 204.02864, optimal_dist: 194.5007, time:   71 ms
+========== Searching ../data/SIFT/ queries=2000 k=5 m=0.5 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.5
+Recall@5: 53.30% (1066 / 2000 queries have GT in top-5)
+===== stat_filter bitslice 4-bit ( Top-5 ) =====
+Time for nonce: 61.131 ms (sum+stats: 5.816 ms + mad_sort: 24.280 ms + slice: 0.914 ms + search: 31.035 ms)
+Time to re-rank top 5 closest: 0.122 ms)
+Recall rate: 52.75% (1055 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 201.81865, optimal_dist: 194.50082, time:   63 ms
+========== Searching ../data/SIFT/ queries=2000 k=5 m=0.7 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.7
+Recall@5: 68.90% (1378 / 2000 queries have GT in top-5)
+===== stat_filter bitslice 4-bit ( Top-5 ) =====
+Time for nonce: 59.636 ms (sum+stats: 5.715 ms + mad_sort: 22.937 ms + slice: 0.423 ms + search: 30.984 ms)
+Time to re-rank top 5 closest: 0.167 ms)
+Recall rate: 68.35% (1367 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 198.60136, optimal_dist: 194.5007, time:   62 ms
+========== Searching ../data/SIFT/ queries=2000 k=5 m=1.0 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 1
+Recall@5: 84.90% (1698 / 2000 queries have GT in top-5)
+===== stat_filter bitslice 4-bit ( Top-5 ) =====
+Time for nonce: 64.737 ms (sum+stats: 6.101 ms + mad_sort: 21.871 ms + slice: 0.629 ms + search: 36.765 ms)
+Time to re-rank top 5 closest: 0.159 ms)
+Recall rate: 84.30% (1686 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 196.03549, optimal_dist: 194.50075, time:   67 ms
+========== Searching ../data/SIFT/ queries=2000 k=5 m=1.5 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 1.5
+Recall@5: 95.20% (1904 / 2000 queries have GT in top-5)
+===== stat_filter bitslice 4-bit ( Top-5 ) =====
+Time for nonce: 61.502 ms (sum+stats: 5.285 ms + mad_sort: 23.004 ms + slice: 0.595 ms + search: 33.213 ms)
+Time to re-rank top 5 closest: 0.104 ms)
+Recall rate: 94.50% (1890 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 194.88535, optimal_dist: 194.50081, time:   63 ms
+========== Searching ../data/SIFT/ queries=2000 k=8 m=0 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0
+Recall@8: 99.75% (1995 / 2000 queries have GT in top-8)
+===== stat_filter bitslice 4-bit ( Top-8 ) =====
+Time for nonce: 44.927 ms (sum+stats: 5.814 ms + mad_sort: 0.808 ms + slice: 0.179 ms + search: 38.305 ms)
+Time to re-rank top 8 closest: 0.192 ms)
+Recall rate: 99.00% (1980 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 194.50429, optimal_dist: 194.5008, time:   47 ms
+========== Searching ../data/SIFT/ queries=2000 k=8 m=0.3 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.3
+Recall@8: 34.65% (693 / 2000 queries have GT in top-8)
+===== stat_filter bitslice 4-bit ( Top-8 ) =====
+Time for nonce: 66.478 ms (sum+stats: 15.249 ms + mad_sort: 21.667 ms + slice: 0.249 ms + search: 29.562 ms)
+Time to re-rank top 8 closest: 0.084 ms)
+Recall rate: 34.25% (685 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 207.05807, optimal_dist: 194.50076, time:   68 ms
+========== Searching ../data/SIFT/ queries=2000 k=8 m=0.31 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.31
+Recall@8: 35.60% (712 / 2000 queries have GT in top-8)
+===== stat_filter bitslice 4-bit ( Top-8 ) =====
+Time for nonce: 56.348 ms (sum+stats: 5.510 ms + mad_sort: 21.264 ms + slice: 0.220 ms + search: 29.574 ms)
+Time to re-rank top 8 closest: 0.087 ms)
+Recall rate: 35.20% (704 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 206.55513, optimal_dist: 194.5008, time:   58 ms
+========== Searching ../data/SIFT/ queries=2000 k=8 m=0.32 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.32
+Recall@8: 36.50% (730 / 2000 queries have GT in top-8)
+===== stat_filter bitslice 4-bit ( Top-8 ) =====
+Time for nonce: 95.478 ms (sum+stats: 5.829 ms + mad_sort: 21.783 ms + slice: 0.360 ms + search: 67.866 ms)
+Time to re-rank top 8 closest: 0.123 ms)
+Recall rate: 36.10% (722 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 206.20837, optimal_dist: 194.50085, time:  113 ms
+========== Searching ../data/SIFT/ queries=2000 k=8 m=0.4 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.4
+Recall@8: 44.15% (883 / 2000 queries have GT in top-8)
+===== stat_filter bitslice 4-bit ( Top-8 ) =====
+Time for nonce: 64.643 ms (sum+stats: 5.897 ms + mad_sort: 21.268 ms + slice: 0.255 ms + search: 37.478 ms)
+Time to re-rank top 8 closest: 0.112 ms)
+Recall rate: 43.65% (873 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 204.01254, optimal_dist: 194.50076, time:   68 ms
+========== Searching ../data/SIFT/ queries=2000 k=8 m=0.5 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.5
+Recall@8: 53.35% (1067 / 2000 queries have GT in top-8)
+===== stat_filter bitslice 4-bit ( Top-8 ) =====
+Time for nonce: 59.832 ms (sum+stats: 5.805 ms + mad_sort: 22.361 ms + slice: 0.276 ms + search: 31.666 ms)
+Time to re-rank top 8 closest: 0.097 ms)
+Recall rate: 52.80% (1056 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 201.80786, optimal_dist: 194.5008, time:   62 ms
+========== Searching ../data/SIFT/ queries=2000 k=8 m=0.7 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.7
+Recall@8: 69.30% (1386 / 2000 queries have GT in top-8)
+===== stat_filter bitslice 4-bit ( Top-8 ) =====
+Time for nonce: 65.000 ms (sum+stats: 11.874 ms + mad_sort: 22.655 ms + slice: 0.319 ms + search: 30.471 ms)
+Time to re-rank top 8 closest: 0.136 ms)
+Recall rate: 68.70% (1374 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 198.58934, optimal_dist: 194.50076, time:   66 ms
+========== Searching ../data/SIFT/ queries=2000 k=8 m=1.0 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 1
+Recall@8: 85.75% (1715 / 2000 queries have GT in top-8)
+===== stat_filter bitslice 4-bit ( Top-8 ) =====
+Time for nonce: 61.240 ms (sum+stats: 7.345 ms + mad_sort: 22.124 ms + slice: 0.349 ms + search: 31.771 ms)
+Time to re-rank top 8 closest: 0.104 ms)
+Recall rate: 85.10% (1702 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 196.01067, optimal_dist: 194.50075, time:   63 ms
+========== Searching ../data/SIFT/ queries=2000 k=8 m=1.5 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 1.5
+Recall@8: 96.35% (1927 / 2000 queries have GT in top-8)
+===== stat_filter bitslice 4-bit ( Top-8 ) =====
+Time for nonce: 59.061 ms (sum+stats: 5.941 ms + mad_sort: 20.936 ms + slice: 0.220 ms + search: 32.184 ms)
+Time to re-rank top 8 closest: 0.111 ms)
+Recall rate: 95.60% (1912 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 194.85562, optimal_dist: 194.50089, time:   61 ms
+========== Searching ../data/SIFT/ queries=2000 k=10 m=0 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0
+Recall@10: 99.85% (1997 / 2000 queries have GT in top-10)
+===== stat_filter bitslice 4-bit ( Top-10 ) =====
+Time for nonce: 42.947 ms (sum+stats: 6.635 ms + mad_sort: 0.419 ms + slice: 0.171 ms + search: 35.893 ms)
+Time to re-rank top 10 closest: 0.131 ms)
+Recall rate: 99.10% (1982 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 194.50272, optimal_dist: 194.50076, time:   45 ms
+========== Searching ../data/SIFT/ queries=2000 k=10 m=0.3 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.3
+Recall@10: 34.65% (693 / 2000 queries have GT in top-10)
+===== stat_filter bitslice 4-bit ( Top-10 ) =====
+Time for nonce: 69.709 ms (sum+stats: 8.029 ms + mad_sort: 30.340 ms + slice: 0.353 ms + search: 31.340 ms)
+Time to re-rank top 10 closest: 0.127 ms)
+Recall rate: 34.25% (685 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 207.05733, optimal_dist: 194.50081, time:   72 ms
+========== Searching ../data/SIFT/ queries=2000 k=10 m=0.31 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.31
+Recall@10: 35.60% (712 / 2000 queries have GT in top-10)
+===== stat_filter bitslice 4-bit ( Top-10 ) =====
+Time for nonce: 57.623 ms (sum+stats: 5.441 ms + mad_sort: 21.221 ms + slice: 0.247 ms + search: 30.961 ms)
+Time to re-rank top 10 closest: 0.092 ms)
+Recall rate: 35.20% (704 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 206.55443, optimal_dist: 194.50078, time:   59 ms
+========== Searching ../data/SIFT/ queries=2000 k=10 m=0.32 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.32
+Recall@10: 36.50% (730 / 2000 queries have GT in top-10)
+===== stat_filter bitslice 4-bit ( Top-10 ) =====
+Time for nonce: 64.627 ms (sum+stats: 12.297 ms + mad_sort: 21.308 ms + slice: 0.236 ms + search: 31.022 ms)
+Time to re-rank top 10 closest: 0.132 ms)
+Recall rate: 36.10% (722 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 206.20798, optimal_dist: 194.50076, time:   66 ms
+========== Searching ../data/SIFT/ queries=2000 k=10 m=0.4 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.4
+Recall@10: 44.15% (883 / 2000 queries have GT in top-10)
+===== stat_filter bitslice 4-bit ( Top-10 ) =====
+Time for nonce: 59.218 ms (sum+stats: 6.412 ms + mad_sort: 22.122 ms + slice: 0.317 ms + search: 30.684 ms)
+Time to re-rank top 10 closest: 0.118 ms)
+Recall rate: 43.65% (873 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 204.01234, optimal_dist: 194.50081, time:   61 ms
+========== Searching ../data/SIFT/ queries=2000 k=10 m=0.5 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.5
+Recall@10: 53.35% (1067 / 2000 queries have GT in top-10)
+===== stat_filter bitslice 4-bit ( Top-10 ) =====
+Time for nonce: 58.221 ms (sum+stats: 5.532 ms + mad_sort: 21.249 ms + slice: 0.164 ms + search: 31.440 ms)
+Time to re-rank top 10 closest: 0.100 ms)
+Recall rate: 52.80% (1056 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 201.8055, optimal_dist: 194.50072, time:   60 ms
+========== Searching ../data/SIFT/ queries=2000 k=10 m=0.7 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.7
+Recall@10: 69.30% (1386 / 2000 queries have GT in top-10)
+===== stat_filter bitslice 4-bit ( Top-10 ) =====
+Time for nonce: 58.363 ms (sum+stats: 5.365 ms + mad_sort: 21.497 ms + slice: 0.243 ms + search: 31.501 ms)
+Time to re-rank top 10 closest: 0.079 ms)
+Recall rate: 68.70% (1374 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 198.58624, optimal_dist: 194.50081, time:   60 ms
+========== Searching ../data/SIFT/ queries=2000 k=10 m=1.0 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 1
+Recall@10: 85.75% (1715 / 2000 queries have GT in top-10)
+===== stat_filter bitslice 4-bit ( Top-10 ) =====
+Time for nonce: 63.692 ms (sum+stats: 7.127 ms + mad_sort: 22.114 ms + slice: 0.288 ms + search: 34.451 ms)
+Time to re-rank top 10 closest: 0.110 ms)
+Recall rate: 85.10% (1702 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 196.00928, optimal_dist: 194.50082, time:   65 ms
+========== Searching ../data/SIFT/ queries=2000 k=10 m=1.5 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 1.5
+Recall@10: 96.40% (1928 / 2000 queries have GT in top-10)
+===== stat_filter bitslice 4-bit ( Top-10 ) =====
+Time for nonce: 61.543 ms (sum+stats: 6.460 ms + mad_sort: 20.948 ms + slice: 0.216 ms + search: 34.135 ms)
+Time to re-rank top 10 closest: 0.193 ms)
+Recall rate: 95.65% (1913 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 194.85379, optimal_dist: 194.50084, time:   63 ms
+========== Searching ../data/SIFT/ queries=2000 k=20 m=0 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0
+Recall@20: 100.00% (2000 / 2000 queries have GT in top-20)
+===== stat_filter bitslice 4-bit ( Top-20 ) =====
+Time for nonce: 81.910 ms (sum+stats: 11.153 ms + mad_sort: 0.844 ms + slice: 0.185 ms + search: 69.913 ms)
+Time to re-rank top 20 closest: 0.238 ms)
+Recall rate: 99.25% (1985 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 194.50081, optimal_dist: 194.50084, time:   85 ms
+========== Searching ../data/SIFT/ queries=2000 k=20 m=0.3 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.3
+Recall@20: 34.65% (693 / 2000 queries have GT in top-20)
+===== stat_filter bitslice 4-bit ( Top-20 ) =====
+Time for nonce: 97.471 ms (sum+stats: 5.802 ms + mad_sort: 20.438 ms + slice: 0.262 ms + search: 71.231 ms)
+Time to re-rank top 20 closest: 0.170 ms)
+Recall rate: 34.25% (685 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 207.05162, optimal_dist: 194.50085, time:  100 ms
+========== Searching ../data/SIFT/ queries=2000 k=20 m=0.31 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.31
+Recall@20: 35.60% (712 / 2000 queries have GT in top-20)
+===== stat_filter bitslice 4-bit ( Top-20 ) =====
+Time for nonce: 94.384 ms (sum+stats: 5.805 ms + mad_sort: 21.773 ms + slice: 0.263 ms + search: 66.806 ms)
+Time to re-rank top 20 closest: 0.160 ms)
+Recall rate: 35.20% (704 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 206.54877, optimal_dist: 194.50082, time:   96 ms
+========== Searching ../data/SIFT/ queries=2000 k=20 m=0.32 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.32
+Recall@20: 36.50% (730 / 2000 queries have GT in top-20)
+===== stat_filter bitslice 4-bit ( Top-20 ) =====
+Time for nonce: 93.991 ms (sum+stats: 5.649 ms + mad_sort: 21.092 ms + slice: 0.224 ms + search: 67.250 ms)
+Time to re-rank top 20 closest: 0.135 ms)
+Recall rate: 36.10% (722 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 206.20398, optimal_dist: 194.50081, time:   96 ms
+========== Searching ../data/SIFT/ queries=2000 k=20 m=0.4 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.4
+Recall@20: 44.15% (883 / 2000 queries have GT in top-20)
+===== stat_filter bitslice 4-bit ( Top-20 ) =====
+Time for nonce: 94.184 ms (sum+stats: 5.571 ms + mad_sort: 21.524 ms + slice: 0.307 ms + search: 67.089 ms)
+Time to re-rank top 20 closest: 0.142 ms)
+Recall rate: 43.65% (873 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 204.01021, optimal_dist: 194.5008, time:   95 ms
+========== Searching ../data/SIFT/ queries=2000 k=20 m=0.5 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.5
+Recall@20: 53.35% (1067 / 2000 queries have GT in top-20)
+===== stat_filter bitslice 4-bit ( Top-20 ) =====
+Time for nonce: 94.152 ms (sum+stats: 5.696 ms + mad_sort: 21.469 ms + slice: 0.218 ms + search: 66.987 ms)
+Time to re-rank top 20 closest: 0.157 ms)
+Recall rate: 52.80% (1056 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 201.80415, optimal_dist: 194.50076, time:   96 ms
+========== Searching ../data/SIFT/ queries=2000 k=20 m=0.7 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 0.7
+Recall@20: 69.30% (1386 / 2000 queries have GT in top-20)
+===== stat_filter bitslice 4-bit ( Top-20 ) =====
+Time for nonce: 95.014 ms (sum+stats: 5.899 ms + mad_sort: 21.291 ms + slice: 0.229 ms + search: 67.824 ms)
+Time to re-rank top 20 closest: 0.129 ms)
+Recall rate: 68.70% (1374 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 198.58417, optimal_dist: 194.50089, time:   96 ms
+========== Searching ../data/SIFT/ queries=2000 k=20 m=1.0 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 1
+Recall@20: 85.90% (1718 / 2000 queries have GT in top-20)
+===== stat_filter bitslice 4-bit ( Top-20 ) =====
+Time for nonce: 99.575 ms (sum+stats: 5.848 ms + mad_sort: 24.849 ms + slice: 0.691 ms + search: 68.878 ms)
+Time to re-rank top 20 closest: 0.184 ms)
+Recall rate: 85.25% (1705 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 196.00357, optimal_dist: 194.5008, time:  102 ms
+========== Searching ../data/SIFT/ queries=2000 k=20 m=1.5 ==========
+vector_dims: 128, database_size: 1000000, num_queries: 2000 (of 10000)
+Compute dimensional stats
+Compute vector stats u4
+stat_filter scale: 1.5
+Recall@20: 96.55% (1931 / 2000 queries have GT in top-20)
+===== stat_filter bitslice 4-bit ( Top-20 ) =====
+Time for nonce: 102.985 ms (sum+stats: 6.095 ms + mad_sort: 24.139 ms + slice: 0.357 ms + search: 72.751 ms)
+Time to re-rank top 20 closest: 0.156 ms)
+Recall rate: 95.80% (1916 / 2000 queries matched)
+instance: "sift.bin", avg_dist: 194.85193, optimal_dist: 194.50084, time:  104 ms

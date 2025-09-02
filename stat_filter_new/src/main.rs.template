@@ -1,0 +1,135 @@
+use anyhow::Result;
+use cudarc::{driver::CudaContext, nvrtc::Ptx, runtime::result::device::get_device_prop};
+use std::{fs, path::PathBuf, time::Instant};
+use tig_algorithms::vector_search::*;
+use tig_challenges::vector_search::*;
+
+const PTX_CODE: &'static str = include_str!(concat!(env!("OUT_DIR"), "/algo.ptx"));
+
+/// Find all `.bin` files in the given directory.
+fn find_bin_files(dir_path: &str) -> Vec<PathBuf> {
+    let mut bin_files = Vec::new();
+    for entry in fs::read_dir(dir_path).unwrap() {
+        let path = entry.unwrap().path();
+        if !path.is_dir() {
+            if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
+                if ext.eq_ignore_ascii_case("bin") {
+                    bin_files.push(path);
+                }
+            }
+        }
+    }
+    bin_files
+}
+
+fn main() -> Result<()> {
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() < 2 {
+        eprintln!("Usage: {} <directory_path>", args[0]);
+        std::process::exit(1);
+    }
+    let dir_path = &args[1];
+
+    let ptx = Ptx::from_src(PTX_CODE);
+    for file_path in find_bin_files(dir_path) {
+        let file_name = file_path.file_name().unwrap().to_string_lossy();
+        let data = fs::read(&file_path)?;
+        let vector_dims = u32::from_le_bytes(data[0..4].try_into()?);
+        let database_size = u32::from_le_bytes(data[4..8].try_into()?);
+        let num_queries = u32::from_le_bytes(data[8..12].try_into()?);
+        println!(
+            "vector_dims: {}, database_size: {}, num_queries: {}",
+            vector_dims, database_size, num_queries
+        );
+        let size = (vector_dims * database_size * 4) as usize;
+        let database_vectors: Vec<f32> = data[12..(12 + size)]
+            .chunks_exact(4)
+            .map(|chunk| {
+                let bytes: [u8; 4] = chunk.try_into().unwrap();
+                f32::from_le_bytes(bytes)
+            })
+            .collect();
+        let size2 = (vector_dims * num_queries * 4) as usize;
+        let query_vectors: Vec<f32> = data[(12 + size)..(12 + size + size2)]
+            .chunks_exact(4)
+            .map(|chunk| {
+                let bytes: [u8; 4] = chunk.try_into().unwrap();
+                f32::from_le_bytes(bytes)
+            })
+            .collect();
+        let nearest_neighbors: Vec<usize> = data[(12 + size + size2)..]
+            .chunks_exact(4)
+            .map(|chunk| {
+                let bytes: [u8; 4] = chunk.try_into().unwrap();
+                u32::from_le_bytes(bytes) as usize
+            })
+            .collect();
+
+        let ctx = CudaContext::new(0)?;
+        ctx.set_blocking_synchronize()?;
+        let module = ctx.load_module(ptx.clone())?;
+        let stream = ctx.default_stream();
+        let prop = get_device_prop(0)?;
+
+        let d_database_vectors = stream.memcpy_stod(&database_vectors)?;
+        let d_query_vectors = stream.memcpy_stod(&query_vectors)?;
+        let challenge = Challenge {
+            seed: [0u8; 32],
+            difficulty: Difficulty {
+                num_queries,
+                better_than_baseline: 0,
+            },
+            vector_dims,
+            database_size,
+            d_database_vectors,
+            d_query_vectors,
+            max_distance: f32::MAX,
+        };
+        let optimal_dist = calc_average_distance(
+            challenge.difficulty.num_queries,
+            challenge.vector_dims,
+            challenge.database_size,
+            &challenge.d_query_vectors,
+            &challenge.d_database_vectors,
+            &nearest_neighbors,
+            module.clone(),
+            stream.clone(),
+            &prop,
+        )?;
+        let start_time = Instant::now();
+        if let Ok(Some(solution)) =
+            ${ALGORITHM}::solve_challenge(&challenge, module.clone(), stream.clone(), &prop)
+        {
+            let elapsed_ms = start_time.elapsed().as_millis();
+
+            match calc_average_distance(
+                challenge.difficulty.num_queries,
+                challenge.vector_dims,
+                challenge.database_size,
+                &challenge.d_query_vectors,
+                &challenge.d_database_vectors,
+                &solution.indexes,
+                module.clone(),
+                stream.clone(),
+                &prop,
+            ) {
+                Ok(avg_dist) => {
+                    println!(
+                        "instance: {:?}, avg_dist: {}, optimal_dist: {}, time: {:4} ms",
+                        file_name, avg_dist, optimal_dist, elapsed_ms
+                    );
+                }
+                Err(err) => {
+                    println!(
+                        "instance: {:?}, result: invalid solution — {}",
+                        file_name, err
+                    );
+                }
+            }
+        } else {
+            println!("instance: {:?}, result: no solution", file_name);
+        }
+    }
+
+    Ok(())
+}

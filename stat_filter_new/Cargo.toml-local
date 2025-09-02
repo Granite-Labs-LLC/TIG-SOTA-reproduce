@@ -1,0 +1,10 @@
+[dependencies]
+anyhow = "1.0.81"
+tig-challenges = { path = "../tig-monorepo/crates/tig-challenges", features = ["vector_search"] }
+tig-algorithms = { path = "../tig-monorepo/crates/tig-algorithms", features = ["vector_search"] }
+cudarc = { path = "../cudarc", features = ["cuda-version-from-build-system"] }
+
+[build-dependencies]
+tig-challenges = { path = "../tig-monorepo/crates/tig-challenges", features = ["vector_search"] }
+tig-algorithms = { path = "../tig-monorepo/crates/tig-algorithms", features = ["vector_search"] }
+

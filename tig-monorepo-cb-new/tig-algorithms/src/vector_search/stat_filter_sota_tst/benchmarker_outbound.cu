@@ -1,0 +1,1437 @@
+/*!
+Copyright 2025 Granite Labs LLC
+
+Identity of Submitter [name of person or entity that submits the Work to TIG]
+
+Licensed under the TIG Inbound Game License v2.0 or (at your option) any later
+version (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
+
+https://github.com/tig-foundation/tig-monorepo/tree/main/docs/licenses
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the License for the specific
+language governing permissions and limitations under the License.
+*/
+
+//
+// stat_filter
+//
+// Filtering based on Median Absolute Deviation (MAD):
+// We compute the median of all L2 norms, then calculate the MAD (median of
+// absolute deviations from the median). The threshold is set to:
+//      norm_threshold = scale_factor × MAD × 1.4826
+// The factor 1.4826 scales MAD to match the standard deviation for normally
+// distributed data. This makes the filter more robust to outliers compared to
+// filtering methods based on mean and standard deviation, which are more
+// sensitive to extreme values.
+//
+// Reference:
+// - NIST Engineering Statistics Handbook:
+//   https://www.itl.nist.gov/div898/handbook/eda/section3/eda35h.htm
+// - See also: https://www.itl.nist.gov/div898/handbook/eda/section3/eda356.htm
+//
+
+/*!
+Copyright 2025 Granite Labs LLC
+...
+*/
+#include <float.h>
+#include <math_constants.h>   // defines CUDART_INF_F, CUDART_NAN_F, etc.
+
+#define USE_4_BITS
+//#define USE_2_BITS
+
+
+//-------------------- Dimension Stats --------------------------
+
+__device__ inline void atomicMaxFloat(float* addr, float val) {
+    // Safe for non-negative floats (your data is 0..255)
+    int* addr_i = reinterpret_cast<int*>(addr);
+    int  old    = *addr_i, assumed;
+    do {
+        assumed = old;
+        if (__int_as_float(assumed) >= val) break;
+        old = atomicCAS(addr_i, assumed, __float_as_int(val));
+    } while (assumed != old);
+}
+
+extern "C" __global__ void compute_dim_stats_kernel(
+    const float* __restrict__ db,  // [num_vecs * dims], original floats
+    float* __restrict__ out_max,   // [dims], init to 0 on host
+    int num_vecs,
+    int dims)
+{
+    int v = blockIdx.x * blockDim.x + threadIdx.x;
+    if (v >= num_vecs) return;
+
+    const float* row = db + (size_t)v * dims;
+    for (int d = 0; d < dims; ++d) {
+        float x = row[d];
+        atomicMaxFloat(&out_max[d], x);
+    }
+}
+
+#if 0
+// This version also keeps the sum of each dimension 
+// so we can generate an average afterward.
+extern "C" __global__ void compute_dim_stats_kernel(
+    const float* __restrict__ db,  // [num_vecs * dims], original floats
+    float* __restrict__ out_sum,   // [dims], init to 0 on host
+    float* __restrict__ out_max,   // [dims], init to 0 on host
+    int num_vecs,
+    int dims)
+{
+    int v = blockIdx.x * blockDim.x + threadIdx.x;
+    if (v >= num_vecs) return;
+
+    const float* row = db + (size_t)v * dims;
+    for (int d = 0; d < dims; ++d) {
+        float x = row[d];
+        atomicAdd(&out_sum[d], x);
+        atomicMaxFloat(&out_max[d], x);
+    }
+}
+#endif
+
+
+//-------------------- Calculate Dimension Divisors -------------
+
+// Build per-dimension divisors from max.  Scale the max down so
+// we throw away outliers.  For example: 
+//     s[d] = max(0.90 * max[d] / 16, 1.0)
+#ifndef FRAC_OF_MAX
+//#define FRAC_OF_MAX 1.00f
+#define FRAC_OF_MAX 0.90f
+//#define FRAC_OF_MAX 0.80f
+#endif
+#ifndef LEVELS
+#  ifdef USE_4_BITS
+#    define LEVELS 16.0f
+#  elif defined(USE_2_BITS)
+#    define LEVELS 4.0f
+#  else
+#    error 'unknown bit count'
+#  endif
+#endif
+#ifndef MIN_STEP
+// This allows us to divide by the result ... no zeros
+#define MIN_STEP 1.0f
+#endif
+
+extern "C" __global__ void build_divisors_from_max_kernel(
+    const float* __restrict__ dim_max, // [dims]
+    float* __restrict__ s,             // [dims] (output... pre-allocated)
+    int dims)
+{
+    int d = blockIdx.x * blockDim.x + threadIdx.x;
+    if (d >= dims) return;
+
+    float mx = fmaxf(0.0f, dim_max[d]);                  // guard negatives/NaN-ish
+    mx = fminf(255.0f, mx);                              // guard against overage
+    float sd = FRAC_OF_MAX * mx / LEVELS;                // example: 0.90 * max / 16
+    s[d] = fmaxf(sd, MIN_STEP);                          // floor at 1.0
+
+    //printf("d:%d  s[d]:%f  max[d]:%f\n",d,s[d],dim_max[d]);
+}
+
+
+
+
+//-------------------- Dimension Aware Conversion ---------------
+
+#ifndef CLIP_MAX
+#define CLIP_MAX 255.0f
+#endif
+
+extern "C" __global__ void f32_to_u8_scaled_perdim_kernel(
+    const float*  __restrict__ in,   // [num_vecs * dims], original floats
+    const float*  __restrict__ s,    // [dims], per-dim divisors
+    uint8_t*       __restrict__ out,  // [num_vecs * dims], scaled u8
+    int num_vecs,
+    int dims)
+{
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int n   = num_vecs * dims;
+    if (idx >= n) return;
+
+    int   d  = idx % dims;
+    float sj = s[d];  // s[d] already has floor 1.0f
+    // Guard against bad/zero divisors
+    //sj = fmaxf(sj, 1e-12f);
+
+    float x  = in[idx];
+    float y  = fminf(fmaxf(x, 0.0f), CLIP_MAX);
+
+    if (y <= 0.0f) { out[idx] = 0; return; }
+
+    int   bin    = __float2int_ru(y / sj);   // ceil(y / s[d])
+#ifdef USE_4_BITS
+    bin = fminf(bin, 15.0f);            // for 16 levels
+#elif defined(USE_2_BITS)
+    bin = fminf(bin, 3.0f);            // for 4 levels
+#else
+#    error 'unknown bit count'
+#endif
+
+    out[idx] = bin;
+}
+
+
+
+// Packs two 4-bit codes per byte: even dim -> low nibble, odd dim -> high nibble.
+// out size per row = (dims + 1) >> 1 bytes.
+extern "C" __global__ void f32_to_u4_packed_perdim_kernel(
+    const float*  __restrict__ in,   // [num_vecs * dims], original floats
+    const float*  __restrict__ s,    // [dims], per-dim divisors (>= 1)
+    uint8_t*      __restrict__ out,  // [num_vecs * ((dims+1)>>1)], packed u4
+    int num_vecs,
+    int dims)
+{
+    int row_bytes = (dims + 1) >> 1;            // 2 dims per byte
+    int bi = blockIdx.x * blockDim.x + threadIdx.x;
+    int total_bytes = num_vecs * row_bytes;
+    if (bi >= total_bytes) return;
+
+    int v = bi / row_bytes;                     // vector id
+    int b = bi % row_bytes;                     // byte index within row
+    int j0 = (b << 1);                          // even dim
+    int j1 = j0 + 1;                            // odd dim
+
+    const float* vin = in + (size_t)v * dims;
+    const float* ss  = s;
+
+    // Dim j0 -> low nibble
+    float x0 = (j0 < dims) ? vin[j0] : 0.0f;
+    float y0 = fminf(fmaxf(x0, 0.0f), CLIP_MAX);
+    float sj0 = ss[j0 < dims ? j0 : 0];         // safe even if j0>=dims
+    int   q0  = (y0 <= 0.0f) ? 0 : __float2int_rn(y0 / sj0);
+    q0 = max(0, min(15, q0));
+
+    // Dim j1 -> high nibble (or 0 if odd dim does not exist)
+    int q1 = 0;
+    if (j1 < dims) {
+        float x1 = vin[j1];
+        float y1 = fminf(fmaxf(x1, 0.0f), CLIP_MAX);
+        float sj1 = ss[j1];
+        q1 = (y1 <= 0.0f) ? 0 : __float2int_rn(y1 / sj1);
+        q1 = max(0, min(15, q1));
+    }
+
+    out[(size_t)v * row_bytes + b] = (uint8_t)((q1 << 4) | (q0 & 0x0F));
+}
+
+
+// Packs four 2-bit codes per byte: dims j0..j3 -> bits [1:0], [3:2], [5:4], [7:6].
+// out size per row = (dims + 3) >> 2 bytes.
+extern "C" __global__ void f32_to_u2_packed_perdim_kernel(
+    const float*  __restrict__ in,   // [num_vecs * dims], original floats
+    const float*  __restrict__ s,    // [dims], per-dim divisors (>= 1)
+    uint8_t*      __restrict__ out,  // [num_vecs * ((dims+3)>>2)], packed u2
+    int num_vecs,
+    int dims)
+{
+    int row_bytes = (dims + 3) >> 2;            // 4 dims per byte
+    int bi = blockIdx.x * blockDim.x + threadIdx.x;
+    int total_bytes = num_vecs * row_bytes;
+    if (bi >= total_bytes) return;
+
+    int v = bi / row_bytes;                     // vector id
+    int b = bi % row_bytes;                     // byte index within row
+    int j0 = (b << 2);                          // 4 dims starting here
+
+    const float* vin = in + (size_t)v * dims;
+    const float* ss  = s;
+
+    uint8_t packed = 0;
+    #pragma unroll
+    for (int k = 0; k < 4; ++k) {
+        int j = j0 + k;
+        int q = 0;
+        if (j < dims) {
+            float x = vin[j];
+            float y = fminf(fmaxf(x, 0.0f), CLIP_MAX);
+            float sj = ss[j];
+            q = (y <= 0.0f) ? 0 : __float2int_rn(y / sj);
+            q = max(0, min(3, q));
+        }
+        packed |= (uint8_t)((q & 0x3) << (2 * k));   // 2 bits each
+    }
+
+    out[(size_t)v * row_bytes + b] = packed;
+}
+
+
+
+
+//----------------- Vector Stats Before Conversion ---------------
+
+
+extern "C" __global__ void compute_vector_stats_kernel(
+    const float* vectors,
+    float* norm_l2,
+    float* norm_l2_squared,
+    int num_vectors,
+    const int vector_size
+)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    double norm_sq = 0.0;
+
+    if (i < num_vectors) {
+        int idx = i * vector_size;
+        for (int j = 0; j < vector_size; j++) {
+            double v = vectors[idx + j];
+            norm_sq = fmaf(v, v, norm_sq);
+        }
+        norm_l2_squared[i] = norm_sq;
+        norm_l2[i] = sqrt(norm_sq);
+    }
+}
+
+
+//----------------- Vector Stats After Conversion ---------------
+
+extern "C" __global__ void compute_vector_stats_u8_kernel(
+    const uint8_t* __restrict__ vectors,  // [num_vecs * dims]
+    float* __restrict__ norm_l2,         // [num_vecs]
+    float* __restrict__ norm_l2_squared, // [num_vecs]
+    int num_vecs,
+    int dims)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= num_vecs) return;
+
+    const uint8_t* row = vectors + (size_t)i * dims;
+
+    // Double accumulator for stability on long dims
+    double acc = 0.0;
+    #pragma unroll 8
+    for (int j = 0; j < dims; ++j) {
+        float v = (float)(row[j]);
+        acc = fma((double)v, (double)v, acc);
+    }
+    norm_l2_squared[i] = (float)acc;
+    norm_l2[i]         = sqrtf((float)acc);
+}
+
+extern "C" __global__ void compute_vector_stats_u4_packed_kernel(
+    const uint8_t* __restrict__ vectors_packed,  // [num_vecs * ((dims+1)>>1)]
+    float* __restrict__ norm_l2,                 // [num_vecs]
+    float* __restrict__ norm_l2_squared,         // [num_vecs]
+    int num_vecs,
+    int dims)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= num_vecs) return;
+
+    const int row_bytes = (dims + 1) >> 1; // 2 dims per byte
+    const uint8_t* row = vectors_packed + (size_t)i * row_bytes;
+
+    double acc = 0.0;
+    int j = 0;
+
+    // Process full bytes
+    for (int by = 0; by < row_bytes; ++by) {
+        uint8_t b = row[by];
+
+        // low nibble -> dim j
+        if (j < dims) {
+            double v = (double)(b & 0x0Fu);
+            acc = fma(v, v, acc);
+            ++j;
+        }
+
+        // high nibble -> dim j
+        if (j < dims) {
+            double v = (double)(b >> 4);
+            acc = fma(v, v, acc);
+            ++j;
+        }
+    }
+
+    float accf = (float)acc;
+    norm_l2_squared[i] = accf;
+    norm_l2[i]         = sqrtf(accf);
+}
+
+extern "C" __global__ void compute_vector_stats_u2_packed_kernel(
+    const uint8_t* __restrict__ vectors_packed,  // [num_vecs * ((dims+3)>>2)]
+    float* __restrict__ norm_l2,                 // [num_vecs]
+    float* __restrict__ norm_l2_squared,         // [num_vecs]
+    int num_vecs,
+    int dims)
+{
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= num_vecs) return;
+
+    const int row_bytes = (dims + 3) >> 2; // 4 dims per byte
+    const uint8_t* row = vectors_packed + (size_t)i * row_bytes;
+
+    double acc = 0.0;
+    int j = 0;
+
+    for (int by = 0; by < row_bytes; ++by) {
+        uint8_t b = row[by];
+
+        // dim j (bits 1:0)
+        if (j < dims) {
+            double v = (double)((b      ) & 0x3u);
+            acc = fma(v, v, acc);
+            ++j;
+        }
+        // dim j+1 (bits 3:2)
+        if (j < dims) {
+            double v = (double)((b >> 2) & 0x3u);
+            acc = fma(v, v, acc);
+            ++j;
+        }
+        // dim j+2 (bits 5:4)
+        if (j < dims) {
+            double v = (double)((b >> 4) & 0x3u);
+            acc = fma(v, v, acc);
+            ++j;
+        }
+        // dim j+3 (bits 7:6)
+        if (j < dims) {
+            double v = (double)((b >> 6) & 0x3u);
+            acc = fma(v, v, acc);
+            ++j;
+        }
+    }
+
+    float accf = (float)acc;
+    norm_l2_squared[i] = accf;
+    norm_l2[i]         = sqrtf(accf);
+}
+
+
+
+
+
+
+//----------------- Nearest Neighbor Search ---------------------
+
+#if 0
+extern "C" __global__ void find_nearest_neighbor_kernel(
+    const uint8_t* __restrict__ query_vectors,
+    const uint8_t* __restrict__ vector_database,
+    const float* __restrict__ norm_l2,
+    const float* __restrict__ norm_l2_squared,
+    int* __restrict__ query_results,
+    const float max_distance,
+    const int vector_database_len,
+    const int query_vectors_len,
+    const int vector_size,
+    const float precomputed_threshold,
+    const float* __restrict__ query_norm_l2,
+    const float* __restrict__ query_norm_l2_squared
+)
+{
+    int q = blockIdx.x;
+    if (q >= query_vectors_len) return;
+
+    __shared__ float norm_threshold;
+    __shared__ float query_norm_sq;
+    __shared__ float query_norm;
+
+    extern __shared__ char shared_memory[];
+    int*   smem_candidate_index    = (int*)shared_memory;
+    float* smem_candidate_distance = (float*)(smem_candidate_index + blockDim.x);
+    uint8_t* smem_query_vector      = (uint8_t*)(smem_candidate_distance + blockDim.x);
+
+    if (threadIdx.x == 0) {
+        norm_threshold = precomputed_threshold;
+        query_norm_sq  = query_norm_l2_squared[q];
+        query_norm     = query_norm_l2[q];
+    }
+
+    for (int j = threadIdx.x; j < vector_size; j += blockDim.x) {
+        smem_query_vector[j] = query_vectors[q * vector_size + j];
+    }
+    __syncthreads();
+
+    float best_distance = FLT_MAX;
+    int   best_index    = INT_MAX;
+
+    for (int i = threadIdx.x; i < vector_database_len; i += blockDim.x) {
+        float norm_diff = fabsf(norm_l2[i] - query_norm);
+        if (norm_diff <= norm_threshold) {
+            const uint8_t* __restrict__ qv = smem_query_vector;
+            const uint8_t* __restrict__ db = &vector_database[i * vector_size];
+            float dot = 0.0f;
+#pragma unroll 8
+            for (int j = 0; j < vector_size; j++) {
+                dot = fmaf((float)(qv[j]), (float)(db[j]), dot);
+            }
+            float distance_sq = query_norm_sq + norm_l2_squared[i] - 2.0f * dot;
+            if (distance_sq < best_distance) {
+                best_index = i;
+                best_distance = distance_sq;
+            }
+        }
+    }
+
+    smem_candidate_index[threadIdx.x]    = best_index;
+    smem_candidate_distance[threadIdx.x] = best_distance;
+    __syncthreads();
+
+    for (int stride = blockDim.x / 2; stride > 0; stride /= 2) {
+        if (threadIdx.x < stride) {
+            if (smem_candidate_distance[threadIdx.x + stride] < smem_candidate_distance[threadIdx.x]) {
+                smem_candidate_distance[threadIdx.x] = smem_candidate_distance[threadIdx.x + stride];
+                smem_candidate_index[threadIdx.x]    = smem_candidate_index[threadIdx.x + stride];
+            }
+        }
+        __syncthreads();
+    }
+
+    if (threadIdx.x == 0) {
+        query_results[q] = smem_candidate_index[0];
+    }
+}
+#endif
+
+
+#if 0
+
+// Keep top-K neighbors (small K like 10–20). One block per query.
+#ifndef KMAX
+#define KMAX 32  // must be >= runtime K (e.g., 20)
+//#define KMAX 100  // must be >= runtime K (e.g., 20)
+//#define KMAX 20  // must be >= runtime K (e.g., 20)
+#endif
+
+__device__ __forceinline__ void topk_try_insert(
+    float d, int i, float* dists, int* idx, int K)
+{
+    // Replace current worst if this candidate is better (smaller distance).
+    int worst = 0;
+    float worst_d = dists[0];
+    #pragma unroll
+    for (int t = 1; t < K; ++t) {
+        if (dists[t] > worst_d) { worst = t; worst_d = dists[t]; }
+    }
+    if (d < worst_d) { dists[worst] = d; idx[worst] = i; }
+}
+
+extern "C" __global__ void find_topk_neighbors_kernel(
+    const uint8_t* __restrict__ query_vectors,
+    const uint8_t* __restrict__ vector_database,
+    const float* __restrict__ norm_l2,
+    const float* __restrict__ norm_l2_squared,
+    int*   __restrict__ topk_indices,     // [query_vectors_len * K]
+    float* __restrict__ topk_distances,   // [query_vectors_len * K]
+    const int   K,                        // e.g., 10 or 20 (K <= KMAX)
+    const float max_distance,             // optional extra cutoff; <=0 to ignore
+    const int   vector_database_len,
+    const int   query_vectors_len,
+    const int   vector_size,
+    const float precomputed_threshold,
+    const float* __restrict__ query_norm_l2,
+    const float* __restrict__ query_norm_l2_squared
+)
+{
+    int q = blockIdx.x;
+    if (q >= query_vectors_len) return;
+    if (K > KMAX) return; // or assert
+
+    __shared__ float norm_threshold;
+    __shared__ float query_norm_sq;
+    __shared__ float query_norm;
+
+    extern __shared__ char shared_memory[];
+    // Per-thread candidates (blockDim.x * K)
+    int*   sm_idx  = (int*)shared_memory;
+    float* sm_dist = (float*)(sm_idx + blockDim.x * K);
+    uint8_t* sm_qv  = (uint8_t*)(sm_dist + blockDim.x * K);
+
+    if (threadIdx.x == 0) {
+        norm_threshold = precomputed_threshold;
+        query_norm_sq  = query_norm_l2_squared[q];
+        query_norm     = query_norm_l2[q];
+    }
+
+    // Cache query vector in shared memory
+    for (int j = threadIdx.x; j < vector_size; j += blockDim.x) {
+        sm_qv[j] = query_vectors[q * vector_size + j];
+    }
+    __syncthreads();
+
+    // Thread-local top-K
+    float tk_dist[KMAX];
+    int   tk_idx[KMAX];
+    #pragma unroll
+    for (int t = 0; t < K; ++t) { tk_dist[t] = CUDART_INF_F; tk_idx[t] = -1; }
+
+    // Scan database subset owned by this thread
+    for (int i = threadIdx.x; i < vector_database_len; i += blockDim.x) {
+        float norm_diff = fabsf(norm_l2[i] - query_norm);
+        if (norm_diff <= norm_threshold) {
+            const uint8_t* __restrict__ qv = sm_qv;
+            const uint8_t* __restrict__ db = &vector_database[i * vector_size];
+
+            float dot = 0.0f;
+            #pragma unroll 8
+            for (int j = 0; j < vector_size; ++j) {
+                dot = fmaf((float)(qv[j]), (float)(db[j]), dot);
+            }
+            float d2 = query_norm_sq + norm_l2_squared[i] - 2.0f * dot;
+            d2 = fmaxf(d2, 0.0f); // clamp to avoid tiny negative due to quantization overshoot
+            if ((max_distance <= 0.0f) || (d2 <= max_distance)) {
+                topk_try_insert(d2, i, tk_dist, tk_idx, K);
+            }
+        }
+    }
+
+    // Write each thread's K candidates to shared memory
+    int base = threadIdx.x * K;
+    #pragma unroll
+    for (int t = 0; t < K; ++t) {
+        sm_idx[base + t]  = tk_idx[t];
+        sm_dist[base + t] = tk_dist[t];
+    }
+    __syncthreads();
+
+    // One thread merges block candidates -> final top-K for this query
+    if (threadIdx.x == 0) {
+        float best_d[KMAX];
+        int   best_i[KMAX];
+        #pragma unroll
+        for (int t = 0; t < K; ++t) { best_d[t] = CUDART_INF_F; best_i[t] = -1; }
+
+        int N = blockDim.x * K;
+        for (int n = 0; n < N; ++n) {
+            float d = sm_dist[n];
+            int   i = sm_idx[n];
+            if (i >= 0 && isfinite(d)) {
+                topk_try_insert(d, i, best_d, best_i, K);
+            }
+        }
+        // Optional: sort ascending by distance for nicer output
+        for (int a = 0; a < K-1; ++a)
+            for (int b = a+1; b < K; ++b)
+                if (best_d[b] < best_d[a]) { float td=best_d[a]; best_d[a]=best_d[b]; best_d[b]=td;
+                                             int ti=best_i[a]; best_i[a]=best_i[b]; best_i[b]=ti; }
+
+        // Write out
+        int out_base = q * K;
+        for (int t = 0; t < K; ++t) {
+            topk_indices[out_base + t]   = best_i[t];
+            topk_distances[out_base + t] = best_d[t];
+        }
+    }
+}
+
+#endif
+
+
+
+#ifndef KMAX
+#define KMAX 64
+#endif
+
+__device__ __forceinline__ void topk_try_insert(float d, int i, float* best_d, int* best_i, int K) {
+    if (d >= best_d[K-1]) return;
+    int pos = K-1;
+    while (pos > 0 && d < best_d[pos-1]) {
+        best_d[pos] = best_d[pos-1];
+        best_i[pos] = best_i[pos-1];
+        --pos;
+    }
+    best_d[pos] = d; best_i[pos] = i;
+}
+
+#ifdef USE_4_BITS
+// ===============================
+// 4-bit packed (two dims / byte)
+// ===============================
+extern "C" __global__ void find_topk_neighbors_u4_packed_kernel(
+    const uint8_t* __restrict__ query_vectors_packed, // [M][(D+1)>>1]
+    const uint8_t* __restrict__ vector_database_packed, // [N][(D+1)>>1]
+    const float*   __restrict__ norm_l2,              // [N]
+    const float*   __restrict__ norm_l2_squared,      // [N]
+    int*           __restrict__ topk_indices,         // [M*K]
+    float*         __restrict__ topk_distances,       // [M*K]
+    const int K,
+    const float max_distance,
+    const int   vector_database_len,   // N
+    const int   query_vectors_len,     // M
+    const int   vector_size,           // D
+    const float precomputed_threshold,
+    const float* __restrict__ query_norm_l2,          // [M]
+    const float* __restrict__ query_norm_l2_squared   // [M]
+)
+{
+    int q = blockIdx.x;
+    if (q >= query_vectors_len) return;
+    if (K > KMAX) return;
+
+    __shared__ float norm_threshold;
+    __shared__ float query_norm_sq;
+    __shared__ float query_norm;
+
+    extern __shared__ char shared_memory[];
+    int*   sm_idx  = (int*)shared_memory;
+    float* sm_dist = (float*)(sm_idx + blockDim.x * K);
+    uint8_t* sm_qv = (uint8_t*)(sm_dist + blockDim.x * K); // unpacked query codes [D]
+
+    if (threadIdx.x == 0) {
+        norm_threshold = precomputed_threshold;
+        query_norm_sq  = query_norm_l2_squared[q];
+        query_norm     = query_norm_l2[q];
+    }
+
+    // --- Unpack query (u4) into sm_qv as bytes (0..15) ---
+    int row_bytes = (vector_size + 1) >> 1;
+    const uint8_t* qrow = query_vectors_packed + (size_t)q * row_bytes;
+    for (int by = threadIdx.x; by < row_bytes; by += blockDim.x) {
+        uint8_t b = qrow[by];
+        int j0 = by << 1;
+        if (j0 < vector_size)     sm_qv[j0] = (uint8_t)(b & 0x0F);
+        if (j0 + 1 < vector_size) sm_qv[j0 + 1] = (uint8_t)(b >> 4);
+    }
+    __syncthreads();
+
+    // --- Thread-local Top-K ---
+    float tk_dist[KMAX];
+    int   tk_idx[KMAX];
+    #pragma unroll
+    for (int t = 0; t < K; ++t) { tk_dist[t] = CUDART_INF_F; tk_idx[t] = -1; }
+
+    // --- Scan DB rows owned by this thread ---
+    for (int i = threadIdx.x; i < vector_database_len; i += blockDim.x) {
+        float norm_diff = fabsf(norm_l2[i] - query_norm);
+        if (norm_diff > norm_threshold) continue;
+
+        const uint8_t* drow = vector_database_packed + (size_t)i * row_bytes;
+
+
+#if __CUDA_ARCH__ >= 610
+        // Integer accumulator (exact for 0..15 * 0..15 sums up to D*225)
+        int acc_i = 0;
+
+        // Process 4 dims per iteration using 2 packed DB bytes → 4 values
+        int j = 0;
+        int row_bytes = (vector_size + 1) >> 1;
+        int by = 0;
+
+        // Fast path: handle pairs of bytes (covers 4 dims)
+        #pragma unroll 16
+        //for (; by + 1 < row_bytes && j + 3 < vector_size; by += 2, j += 4) {
+        for (; by < row_bytes; by += 2) {  // ONLY if vector_size%4 == 0
+            int j = by << 1;          // j = 2*by
+
+            uint8_t b0 = drow[by];
+            uint8_t b1 = drow[by + 1];
+
+            // Expand two bytes into four 8-bit codes
+            // d0 = low nibble of b0, d1 = high of b0, d2 = low of b1, d3 = high of b1
+            int db_pack =
+                  (int)( b0        & 0x0F)
+                | (int)((b0 >> 4)  & 0x0F) << 8
+                | (int)( b1        & 0x0F) << 16
+                | (int)((b1 >> 4)  & 0x0F) << 24;
+
+            // Pack query bytes for the same 4 dims
+            int q_pack =
+                  (int)sm_qv[j]
+                | (int)sm_qv[j + 1] << 8
+                | (int)sm_qv[j + 2] << 16
+                | (int)sm_qv[j + 3] << 24;
+
+            acc_i = __dp4a(q_pack, db_pack, acc_i);
+        }
+
+        // Tail (≤3 dims / ≤1 byte)
+        if (j < vector_size) {
+            uint8_t b = drow[by];
+            // dim j
+            int d0 = (b & 0x0F);
+            acc_i += (int)sm_qv[j] * d0;
+            ++j;
+            if (j < vector_size) {
+                int d1 = (b >> 4);
+                acc_i += (int)sm_qv[j] * d1;
+                ++j;
+            }
+            // If vector_size - j == 2 or 3, we'd need one more byte; but since
+            // row_bytes = ceil(D/2), this only happens if D%2==0 and we already handled it above.
+        }
+
+        float dot = (float)acc_i;
+#else
+#  error 'unsupported CUDA architecture'
+        // ----- Fallback: original scalar FMAs (no dp4a) -----
+        float dot = 0.0f;
+
+        // Accumulate dot using packed bytes
+        int j = 0;
+        #pragma unroll 1
+        for (int by = 0; by < ((vector_size + 1) >> 1); ++by) {
+            uint8_t b = drow[by];
+            if (j < vector_size) { dot = fmaf((float)sm_qv[j], (float)(b & 0x0F), dot); ++j; }
+            if (j < vector_size) { dot = fmaf((float)sm_qv[j], (float)(b >> 4),    dot); ++j; }
+        }
+#endif
+
+        float d2 = query_norm_sq + norm_l2_squared[i] - 2.0f * dot;
+        d2 = fmaxf(d2, 0.0f);
+        if (max_distance <= 0.0f || d2 <= max_distance) {
+            topk_try_insert(d2, i, tk_dist, tk_idx, K);
+        }
+    }
+
+    // Spill per-thread candidates
+    int base = threadIdx.x * K;
+    #pragma unroll
+    for (int t = 0; t < K; ++t) {
+        sm_idx[base + t]  = tk_idx[t];
+        sm_dist[base + t] = tk_dist[t];
+    }
+    __syncthreads();
+
+    // Merge to block top-K
+    if (threadIdx.x == 0) {
+        float best_d[KMAX];
+        int   best_i[KMAX];
+        #pragma unroll
+        for (int t = 0; t < K; ++t) { best_d[t] = CUDART_INF_F; best_i[t] = -1; }
+        int N = blockDim.x * K;
+        for (int n = 0; n < N; ++n) {
+            float d = sm_dist[n];
+            int   i = sm_idx[n];
+            if (i >= 0 && isfinite(d)) topk_try_insert(d, i, best_d, best_i, K);
+        }
+        // Stable-ish sort for pretty output (optional)
+        for (int a = 0; a < K-1; ++a)
+            for (int b = a+1; b < K; ++b)
+                if (best_d[b] < best_d[a]) { float td=best_d[a]; best_d[a]=best_d[b]; best_d[b]=td;
+                                             int ti=best_i[a]; best_i[a]=best_i[b]; best_i[b]=ti; }
+        int out_base = q * K;
+        for (int t = 0; t < K; ++t) {
+            topk_indices[out_base + t]   = best_i[t];
+            topk_distances[out_base + t] = best_d[t];
+        }
+    }
+}
+#endif
+
+#ifdef USE_2_BITS
+// ===============================
+// 2-bit packed (four dims / byte)
+// ===============================
+extern "C" __global__ void find_topk_neighbors_u2_packed_kernel(
+    const uint8_t* __restrict__ query_vectors_packed,   // [M][(D+3)>>2]
+    const uint8_t* __restrict__ vector_database_packed, // [N][(D+3)>>2]
+    const float*   __restrict__ norm_l2,              // [N]
+    const float*   __restrict__ norm_l2_squared,      // [N]
+    int*           __restrict__ topk_indices,         // [M*K]
+    float*         __restrict__ topk_distances,       // [M*K]
+    const int K,
+    const float max_distance,
+    const int   vector_database_len,   // N
+    const int   query_vectors_len,     // M
+    const int   vector_size,           // D
+    const float precomputed_threshold,
+    const float* __restrict__ query_norm_l2,          // [M]
+    const float* __restrict__ query_norm_l2_squared   // [M]
+)
+{
+    int q = blockIdx.x;
+    if (q >= query_vectors_len) return;
+    if (K > KMAX) return;
+
+    __shared__ float norm_threshold;
+    __shared__ float query_norm_sq;
+    __shared__ float query_norm;
+
+    extern __shared__ char shared_memory[];
+    int*   sm_idx  = (int*)shared_memory;
+    float* sm_dist = (float*)(sm_idx + blockDim.x * K);
+    uint8_t* sm_qv = (uint8_t*)(sm_dist + blockDim.x * K); // unpacked query codes [D]
+
+    if (threadIdx.x == 0) {
+        norm_threshold = precomputed_threshold;
+        query_norm_sq  = query_norm_l2_squared[q];
+        query_norm     = query_norm_l2[q];
+    }
+
+    // --- Unpack query (u2) into sm_qv as bytes (0..3) ---
+    int row_bytes = (vector_size + 3) >> 2;
+    const uint8_t* qrow = query_vectors_packed + (size_t)q * row_bytes;
+    for (int by = threadIdx.x; by < row_bytes; by += blockDim.x) {
+        uint8_t b = qrow[by];
+        int j0 = by << 2;
+        if (j0 < vector_size)     sm_qv[j0    ] = (uint8_t)( b        & 0x3);
+        if (j0+1 < vector_size)   sm_qv[j0 + 1] = (uint8_t)((b >> 2) & 0x3);
+        if (j0+2 < vector_size)   sm_qv[j0 + 2] = (uint8_t)((b >> 4) & 0x3);
+        if (j0+3 < vector_size)   sm_qv[j0 + 3] = (uint8_t)((b >> 6) & 0x3);
+    }
+    __syncthreads();
+
+    // --- Thread-local Top-K ---
+    float tk_dist[KMAX];
+    int   tk_idx[KMAX];
+    #pragma unroll
+    for (int t = 0; t < K; ++t) { tk_dist[t] = CUDART_INF_F; tk_idx[t] = -1; }
+
+    // --- Scan DB rows owned by this thread ---
+    for (int i = threadIdx.x; i < vector_database_len; i += blockDim.x) {
+        float norm_diff = fabsf(norm_l2[i] - query_norm);
+        if (norm_diff > norm_threshold) continue;
+
+        const uint8_t* drow = vector_database_packed + (size_t)i * row_bytes;
+
+// == replace ONLY the inner dot loop in your 2-bit kernel ==
+#if __CUDA_ARCH__ >= 610
+        int acc_i = 0;
+
+        int j = 0;
+        int row_bytes = (vector_size + 3) >> 2;
+
+        // Each byte holds 4 codes → perfect for one dp4a per byte
+        #pragma unroll 4
+        for (int by = 0; by < row_bytes && j < vector_size; ++by, j += 4) {
+            uint8_t b = drow[by];
+
+            // Expand 4 two-bit fields into 4 bytes 0..3
+            int db_pack =
+                  (int)((b      ) & 0x03)
+                | (int)((b >>  2) & 0x03) << 8
+                | (int)((b >>  4) & 0x03) << 16
+                | (int)((b >>  6) & 0x03) << 24;
+
+            // Pack 4 query codes
+            // (Bounds-safe: if D not multiple of 4, we may read 1–3 valid here;
+            //  the kernel's unpack step already filled sm_qv[missing] with 0.)
+            int q_pack =
+                  (int)sm_qv[j]
+                | (int)sm_qv[j + 1] << 8
+                | (int)sm_qv[j + 2] << 16
+                | (int)sm_qv[j + 3] << 24;
+
+            acc_i = __dp4a(q_pack, db_pack, acc_i);
+        }
+
+        float dot = (float)acc_i;
+#else
+#  error 'CUDA dev kit too old'
+        // ----- Fallback: original scalar FMAs (no dp4a) -----
+        float dot = 0.0f;
+        // Accumulate dot using packed bytes (4 fields/byte)
+        int j = 0;
+        #pragma unroll 1
+        for (int by = 0; by < ((vector_size + 3) >> 2); ++by) {
+            uint8_t b = drow[by];
+            if (j < vector_size) { dot = fmaf((float)sm_qv[j], (float)((b      ) & 0x3), dot); ++j; }
+            if (j < vector_size) { dot = fmaf((float)sm_qv[j], (float)((b >> 2) & 0x3), dot); ++j; }
+            if (j < vector_size) { dot = fmaf((float)sm_qv[j], (float)((b >> 4) & 0x3), dot); ++j; }
+            if (j < vector_size) { dot = fmaf((float)sm_qv[j], (float)((b >> 6) & 0x3), dot); ++j; }
+        }
+#endif
+
+
+
+        float d2 = query_norm_sq + norm_l2_squared[i] - 2.0f * dot;
+        d2 = fmaxf(d2, 0.0f);
+        if (max_distance <= 0.0f || d2 <= max_distance) {
+            topk_try_insert(d2, i, tk_dist, tk_idx, K);
+        }
+    }
+
+    // Spill per-thread candidates
+    int base = threadIdx.x * K;
+    #pragma unroll
+    for (int t = 0; t < K; ++t) {
+        sm_idx[base + t]  = tk_idx[t];
+        sm_dist[base + t] = tk_dist[t];
+    }
+    __syncthreads();
+
+    // Merge to block top-K
+    if (threadIdx.x == 0) {
+        float best_d[KMAX];
+        int   best_i[KMAX];
+        #pragma unroll
+        for (int t = 0; t < K; ++t) { best_d[t] = CUDART_INF_F; best_i[t] = -1; }
+        int N = blockDim.x * K;
+        for (int n = 0; n < N; ++n) {
+            float d = sm_dist[n];
+            int   i = sm_idx[n];
+            if (i >= 0 && isfinite(d)) topk_try_insert(d, i, best_d, best_i, K);
+        }
+        for (int a = 0; a < K-1; ++a)
+            for (int b = a+1; b < K; ++b)
+                if (best_d[b] < best_d[a]) { float td=best_d[a]; best_d[a]=best_d[b]; best_d[b]=td;
+                                             int ti=best_i[a]; best_i[a]=best_i[b]; best_i[b]=ti; }
+        int out_base = q * K;
+        for (int t = 0; t < K; ++t) {
+            topk_indices[out_base + t]   = best_i[t];
+            topk_distances[out_base + t] = best_d[t];
+        }
+    }
+}
+#endif
+
+
+
+
+
+
+
+
+
+//------------------- 4-BIT Conversion -------------------------
+
+// Each byte holds two 4-bit codes: [hi | lo]
+// even j -> low nibble; odd j -> high nibble
+
+__device__ __forceinline__ uint8_t code4_load(const uint8_t* row, int j) {
+    uint8_t b = row[j >> 1];
+    return (j & 1) ? (uint8_t)(b >> 4) : (uint8_t)(b & 0x0Fu);
+}
+
+__device__ __forceinline__ void code4_store(uint8_t* row, int j, uint8_t code) {
+    int idx = j >> 1;
+    uint8_t b = row[idx];
+    if ((j & 1) == 0) {
+        // even j → low nibble
+        row[idx] = (uint8_t)((b & 0xF0u) | (code & 0x0Fu));
+    } else {
+        // odd j → high nibble
+        row[idx] = (uint8_t)((b & 0x0Fu) | ((code & 0x0Fu) << 4));
+    }
+}
+
+extern "C" __global__ void pack_codes4_kernel(
+    const uint8_t* __restrict__ codes4_plain, // [N][D], each value 0..15
+    int N, int D,
+    uint8_t* __restrict__ packed             // [N][(D+1)>>1]
+){
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= N) return;
+
+    const uint8_t* in  = codes4_plain + (size_t)i * D;
+    uint8_t*       out = packed        + (size_t)i * ((D + 1) >> 1);
+
+    // zero the output row
+    for (int b = 0; b < ((D + 1) >> 1); ++b) out[b] = 0;
+
+    // pack two 4-bit codes per byte
+    #pragma unroll 1
+    for (int j = 0; j < D; ++j) {
+        uint8_t c = in[j] & 0x0F;
+        code4_store(out, j, c);
+    }
+}
+
+extern "C" __global__ void unpack_codes4_kernel(
+    const uint8_t* __restrict__ packed, // [N][(D+1)>>1]
+    int N, int D,
+    uint8_t* __restrict__ codes4_plain  // [N][D], values 0..15
+){
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= N) return;
+
+    const uint8_t* in  = packed        + (size_t)i * ((D + 1) >> 1);
+    uint8_t*       out = codes4_plain  + (size_t)i * D;
+
+    #pragma unroll 1
+    for (int j = 0; j < D; ++j) {
+        out[j] = code4_load(in, j);
+    }
+}
+
+// LUT is [D][16] laid out row-major (j*16 + code)
+__device__ __forceinline__ float adc_from_packed_u4(
+    const uint8_t* __restrict__ row,   // packed codes ( (D+1)>>1 bytes )
+    const float*   __restrict__ LUT,   // D*16 floats (ideally in shared)
+    int D
+){
+    float acc = 0.f;
+    int byte_count = (D + 1) >> 1;
+    #pragma unroll 1
+    for (int by = 0, j = 0; by < byte_count; ++by) {
+        uint8_t b = row[by];
+        // low nibble → dim j
+        uint8_t c0 = b & 0x0F;
+        acc += LUT[j*16 + c0];
+        ++j;
+        if (j >= D) break;
+        // high nibble → dim j
+        uint8_t c1 = b >> 4;
+        acc += LUT[j*16 + c1];
+        ++j;
+    }
+    return acc;
+}
+
+
+// 4-bit
+__device__ __forceinline__ uint8_t u4_load(const uint8_t* row, int j){
+    uint8_t b = row[j >> 1];
+    return (j & 1) ? (b >> 4) : (b & 0x0F);
+}
+
+// 2-bit
+__device__ __forceinline__ uint8_t u2_load(const uint8_t* row, int j){
+    uint8_t b = row[j >> 2];
+    int shift = (j & 3) * 2;
+    return (b >> shift) & 0x3;
+}
+
+
+
+
+// refine_topk_rerank_kernel.cu
+
+extern "C" __global__ void refine_topk_rerank_kernel(
+    const float* __restrict__ query_vectors,    // [num_queries * dim]
+    const float* __restrict__ db_vectors,       // [db_len * dim]
+    const int*   __restrict__ candidates,       // [num_queries * K]
+    int*         __restrict__ out_index,        // [num_queries]
+    float*       __restrict__ out_distance,     // [num_queries] (squared L2)
+    const int num_queries,
+    const int dim,
+    const int K
+)
+{
+    int q = blockIdx.x;
+    if (q >= num_queries) return;
+
+    extern __shared__ unsigned char shared[];
+    float* sm_q = reinterpret_cast<float*>(shared);
+    float* red  = sm_q + dim;       // reduction buffer, length = blockDim.x
+
+    // Cache query vector into shared memory
+    for (int j = threadIdx.x; j < dim; j += blockDim.x) {
+        sm_q[j] = query_vectors[q * dim + j];
+    }
+    __syncthreads();
+
+    float best_d = FLT_MAX;
+    int   best_i = -1;
+
+    // For each candidate, compute exact squared L2 distance in parallel
+    for (int t = 0; t < K; ++t) {
+        int db_idx = candidates[q * K + t];
+        if (db_idx < 0) continue;
+
+        const float* db = &db_vectors[db_idx * dim];
+
+        // Partial sum over dimensions (strided by thread)
+        float sum = 0.0f;
+        for (int j = threadIdx.x; j < dim; j += blockDim.x) {
+            float diff = sm_q[j] - db[j];
+            sum = fmaf(diff, diff, sum);
+        }
+
+        // Block-wide reduction into red[0]
+        red[threadIdx.x] = sum;
+        __syncthreads();
+
+        for (int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
+            if (threadIdx.x < stride) {
+                red[threadIdx.x] += red[threadIdx.x + stride];
+            }
+            __syncthreads();
+        }
+
+        if (threadIdx.x == 0) {
+            float d = red[0];
+            if (d < best_d) { best_d = d; best_i = db_idx; }
+        }
+        __syncthreads();
+    }
+
+    if (threadIdx.x == 0) {
+        out_index[q]    = best_i;
+        out_distance[q] = best_d;
+    }
+}
+
+
+
+// ===============================
+// 4-bit bit-sliced helper kernels
+// ===============================
+
+extern "C" __global__ void u4_packed_to_bitplanes(
+    const uint8_t* __restrict__ packed,   // [num_vecs][(D+1)>>1] ; 2 dims/byte (lo nibble, hi nibble)
+    unsigned long long* __restrict__ out_b0, // [num_vecs][W] ; bit 0 plane
+    unsigned long long* __restrict__ out_b1, // [num_vecs][W] ; bit 1 plane
+    unsigned long long* __restrict__ out_b2, // [num_vecs][W] ; bit 2 plane
+    unsigned long long* __restrict__ out_b3, // [num_vecs][W] ; bit 3 plane (MSB)
+    int num_vecs, int D, int W)
+{
+    int v = blockIdx.x * blockDim.x + threadIdx.x;
+    if (v >= num_vecs) return;
+
+    const uint8_t* row = packed + (size_t)v * ((D + 1) >> 1);
+
+    for (int w = 0; w < W; ++w) {
+        unsigned long long b0 = 0ULL, b1 = 0ULL, b2 = 0ULL, b3 = 0ULL;
+        int j_base = w << 6; // 64 dims per 64b word
+        #pragma unroll
+        for (int t = 0; t < 64; ++t) {
+            int j = j_base + t;
+            if (j >= D) break;
+
+            int by = j >> 1;                 // 2 dims per byte
+            uint8_t code = (j & 1)
+                ? (row[by] >> 4) & 0xF       // high nibble
+                : (row[by]      ) & 0xF;     // low nibble
+
+            if (code & 0x1) b0 |= (1ULL << t);
+            if (code & 0x2) b1 |= (1ULL << t);
+            if (code & 0x4) b2 |= (1ULL << t);
+            if (code & 0x8) b3 |= (1ULL << t);
+        }
+        out_b0[(size_t)v * W + w] = b0;
+        out_b1[(size_t)v * W + w] = b1;
+        out_b2[(size_t)v * W + w] = b2;
+        out_b3[(size_t)v * W + w] = b3;
+    }
+}
+
+#if 0
+// Optional: compute bin-space L2 norms from 4-bit bitplanes
+extern "C" __global__ void compute_norms_u4_bitsliced_kernel(
+    const unsigned long long* __restrict__ b0, // [num_vecs][W]
+    const unsigned long long* __restrict__ b1, // [num_vecs][W]
+    const unsigned long long* __restrict__ b2, // [num_vecs][W]
+    const unsigned long long* __restrict__ b3, // [num_vecs][W]
+    float* __restrict__ norm_l2,               // [num_vecs]
+    float* __restrict__ norm_l2_squared,       // [num_vecs]
+    int num_vecs, int D, int W)
+{
+    int v = blockIdx.x * blockDim.x + threadIdx.x;
+    if (v >= num_vecs) return;
+
+    const unsigned long long* x0 = b0 + (size_t)v * W;
+    const unsigned long long* x1 = b1 + (size_t)v * W;
+    const unsigned long long* x2 = b2 + (size_t)v * W;
+    const unsigned long long* x3 = b3 + (size_t)v * W;
+
+    int s0=0,s1=0,s2=0,s3=0, p01=0,p02=0,p03=0,p12=0,p13=0,p23=0;
+
+    unsigned long long tail_mask;
+    int tail_bits = D & 63;
+    tail_mask = (tail_bits==0) ? 0xFFFFFFFFFFFFFFFFULL : ((1ULL<<tail_bits)-1ULL);
+
+    for (int w = 0; w < W; ++w) {
+        unsigned long long mask = (w==W-1) ? tail_mask : 0xFFFFFFFFFFFFFFFFULL;
+        unsigned long long a0 = x0[w] & mask;
+        unsigned long long a1 = x1[w] & mask;
+        unsigned long long a2 = x2[w] & mask;
+        unsigned long long a3 = x3[w] & mask;
+
+        s0  += __popcll(a0);
+        s1  += __popcll(a1);
+        s2  += __popcll(a2);
+        s3  += __popcll(a3);
+
+        p01 += __popcll(a0 & a1);
+        p02 += __popcll(a0 & a2);
+        p03 += __popcll(a0 & a3);
+        p12 += __popcll(a1 & a2);
+        p13 += __popcll(a1 & a3);
+        p23 += __popcll(a2 & a3);
+    }
+
+    // norm^2 = 1*s0 + 4*s1 + 16*s2 + 64*s3
+    //        + 4*p01 + 8*p02 + 16*p03 + 16*p12 + 32*p13 + 64*p23
+    int n2 =
+          (1  * s0) + (4  * s1) + (16 * s2) + (64 * s3)
+        + (4  * p01) + (8  * p02) + (16 * p03)
+        + (16 * p12) + (32 * p13) + (64 * p23);
+
+    float f2 = (float)n2;
+    norm_l2_squared[v] = f2;
+    norm_l2[v]         = sqrtf(f2);
+}
+#endif
+
+// ===============================
+// 4-bit bit-sliced Top-K kernel
+// ===============================
+extern "C" __global__ void find_topk_neighbors_u4_bitsliced_kernel(
+    const unsigned long long* __restrict__ q0,   // [M][W]
+    const unsigned long long* __restrict__ q1,   // [M][W]
+    const unsigned long long* __restrict__ q2,   // [M][W]
+    const unsigned long long* __restrict__ q3,   // [M][W]
+    const unsigned long long* __restrict__ x0,   // [N][W]
+    const unsigned long long* __restrict__ x1,   // [N][W]
+    const unsigned long long* __restrict__ x2,   // [N][W]
+    const unsigned long long* __restrict__ x3,   // [N][W]
+    const float*   __restrict__ norm_l2,               // [N] (bin-space)
+    const float*   __restrict__ norm_l2_squared,       // [N] (bin-space)
+    int*           __restrict__ topk_indices,          // [M*K]
+    float*         __restrict__ topk_distances,        // [M*K]
+    const int K,
+    const float max_distance,
+    const int   vector_database_len,   // N
+    const int   query_vectors_len,     // M
+    const int   vector_size,           // D
+    const float precomputed_threshold,
+    const float* __restrict__ query_norm_l2,           // [M] (bin-space)
+    const float* __restrict__ query_norm_l2_squared,   // [M] (bin-space)
+    const int   W                                         // words per plane
+)
+{
+    int q = blockIdx.x;
+    if (q >= query_vectors_len) return;
+    if (K > KMAX) return;
+
+    // shared: per-thread heaps + query planes
+    extern __shared__ unsigned char smem[];
+    int*   sm_idx  = (int*)smem;
+    float* sm_dist = (float*)(sm_idx + blockDim.x * K);
+    unsigned long long* sm_q0 = (unsigned long long*)(sm_dist + blockDim.x * K);
+    unsigned long long* sm_q1 = sm_q0 + W;
+    unsigned long long* sm_q2 = sm_q1 + W;
+    unsigned long long* sm_q3 = sm_q2 + W;
+
+    __shared__ float norm_threshold;
+    __shared__ float query_norm, query_norm_sq;
+    __shared__ unsigned long long tail_mask;
+
+    if (threadIdx.x == 0) {
+        norm_threshold = precomputed_threshold;
+        query_norm_sq  = query_norm_l2_squared[q];
+        query_norm     = query_norm_l2[q];
+        int tail_bits  = vector_size & 63;
+        tail_mask = (tail_bits == 0) ? 0xFFFFFFFFFFFFFFFFULL : ((1ULL << tail_bits) - 1ULL);
+    }
+    __syncthreads();
+
+    // load query bitplanes into shared
+    const unsigned long long* Q0 = q0 + (size_t)q * W;
+    const unsigned long long* Q1 = q1 + (size_t)q * W;
+    const unsigned long long* Q2 = q2 + (size_t)q * W;
+    const unsigned long long* Q3 = q3 + (size_t)q * W;
+    for (int w = threadIdx.x; w < W; w += blockDim.x) {
+        unsigned long long m = (w == W-1) ? tail_mask : 0xFFFFFFFFFFFFFFFFULL;
+        sm_q0[w] = Q0[w] & m;
+        sm_q1[w] = Q1[w] & m;
+        sm_q2[w] = Q2[w] & m;
+        sm_q3[w] = Q3[w] & m;
+    }
+    __syncthreads();
+
+    // thread-local top-K
+    float tk_dist[KMAX];
+    int   tk_idx[KMAX];
+    #pragma unroll
+    for (int t = 0; t < K; ++t) { tk_dist[t] = CUDART_INF_F; tk_idx[t] = -1; }
+
+    // scan DB rows owned by this thread
+    for (int i = threadIdx.x; i < vector_database_len; i += blockDim.x) {
+        float norm_diff = fabsf(norm_l2[i] - query_norm);
+        if (norm_diff > norm_threshold) continue;
+
+        const unsigned long long* X0 = x0 + (size_t)i * W;
+        const unsigned long long* X1 = x1 + (size_t)i * W;
+        const unsigned long long* X2 = x2 + (size_t)i * W;
+        const unsigned long long* X3 = x3 + (size_t)i * W;
+
+        int c00=0,c01=0,c02=0,c03=0,
+            c10=0,c11=0,c12=0,c13=0,
+            c20=0,c21=0,c22=0,c23=0,
+            c30=0,c31=0,c32=0,c33=0;
+
+        #pragma unroll
+        for (int w = 0; w < W; ++w) {
+            unsigned long long m = (w == W-1) ? tail_mask : 0xFFFFFFFFFFFFFFFFULL;
+
+            unsigned long long q0w = sm_q0[w];
+            unsigned long long q1w = sm_q1[w];
+            unsigned long long q2w = sm_q2[w];
+            unsigned long long q3w = sm_q3[w];
+
+            unsigned long long x0w = X0[w] & m;
+            unsigned long long x1w = X1[w] & m;
+            unsigned long long x2w = X2[w] & m;
+            unsigned long long x3w = X3[w] & m;
+
+            c00 += __popcll(q0w & x0w);
+            c01 += __popcll(q0w & x1w);
+            c02 += __popcll(q0w & x2w);
+            c03 += __popcll(q0w & x3w);
+
+            c10 += __popcll(q1w & x0w);
+            c11 += __popcll(q1w & x1w);
+            c12 += __popcll(q1w & x2w);
+            c13 += __popcll(q1w & x3w);
+
+            c20 += __popcll(q2w & x0w);
+            c21 += __popcll(q2w & x1w);
+            c22 += __popcll(q2w & x2w);
+            c23 += __popcll(q2w & x3w);
+
+            c30 += __popcll(q3w & x0w);
+            c31 += __popcll(q3w & x1w);
+            c32 += __popcll(q3w & x2w);
+            c33 += __popcll(q3w & x3w);
+        }
+
+        // dot = Σ_{i=0..3} Σ_{j=0..3} 2^(i+j) * cij
+        int dot_i =
+              (1  * c00)
+            + (2  * (c01 + c10))
+            + (4  * (c02 + c20 + c11))
+            + (8  * (c03 + c30 + c12 + c21))
+            + (16 * (c13 + c31 + c22))
+            + (32 * (c23 + c32))
+            + (64 *  c33);
+
+        float dot = (float)dot_i;
+
+        float d2 = query_norm_sq + norm_l2_squared[i] - 2.0f * dot;
+        d2 = fmaxf(d2, 0.0f);
+        if (max_distance <= 0.0f || d2 <= max_distance) {
+            topk_try_insert(d2, i, tk_dist, tk_idx, K);
+        }
+    }
+
+    // spill & merge per-thread candidates
+    int base = threadIdx.x * K;
+    #pragma unroll
+    for (int t = 0; t < K; ++t) {
+        sm_idx [base + t] = tk_idx[t];
+        sm_dist[base + t] = tk_dist[t];
+    }
+    __syncthreads();
+
+    if (threadIdx.x == 0) {
+        float best_d[KMAX];
+        int   best_i[KMAX];
+        #pragma unroll
+        for (int t = 0; t < K; ++t) { best_d[t] = CUDART_INF_F; best_i[t] = -1; }
+
+        int Nspill = blockDim.x * K;
+        for (int n = 0; n < Nspill; ++n) {
+            float d = sm_dist[n];
+            int   i = sm_idx[n];
+            if (i >= 0 && isfinite(d)) topk_try_insert(d, i, best_d, best_i, K);
+        }
+        for (int a = 0; a < K-1; ++a)
+            for (int b = a+1; b < K; ++b)
+                if (best_d[b] < best_d[a]) {
+                    float td=best_d[a]; best_d[a]=best_d[b]; best_d[b]=td;
+                    int   ti=best_i[a]; best_i[a]=best_i[b]; best_i[b]=ti;
+                }
+
+        int out = q * K;
+        for (int t = 0; t < K; ++t) {
+            topk_indices  [out + t] = best_i[t];
+            topk_distances[out + t] = best_d[t];
+        }
+    }
+}
+
+
+
+

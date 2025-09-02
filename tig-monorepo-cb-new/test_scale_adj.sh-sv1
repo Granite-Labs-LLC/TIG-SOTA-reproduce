@@ -1,0 +1,46 @@
+#!/bin/bash
+
+
+#echo "SCALE_ADJUSTMENT"
+#
+NQ=2000
+NN=10
+
+
+F=tmpfile1
+
+: > $F
+
+echo "scale_adjustment,queries_per_second,recall_percent"
+
+for S in 0.6 0.65 0.66 0.67 0.68 0.69 0.7 0.74 0.78 0.8 1.0
+#for S in 0.6 0.65 0.66 0.67 0.68 0.69 0.7 0.74 0.78 0.8 1.0 1.1 1.2 1.5 1.8
+do
+
+  export SCALE_ADJUSTMENT=$S
+
+  #echo "scale adjustment: $S"
+
+  #scripts/test_algorithm_timer --nonces ${NN} --workers 1 stat_filter [${NQ},500] | egrep 'Time|solution_ratio: '
+  #V=`scripts/test_algorithm_timer --nonces ${NN} --workers 1 stat_filter [${NQ},500] | egrep 'Time|solution_ratio: '`
+
+  scripts/test_algorithm_timer --nonces ${NN} --workers 1 stat_filter [${NQ},500] | egrep 'Time for |#solutions: ' > $F 
+
+  #T=`scripts/test_algorithm_timer --nonces ${NN} --workers 1 stat_filter [${NQ},500] | egrep 'Time for ' | awk '{printf("%.3f + ", $4)}'`
+  T=`grep 'Time for ' $F | awk '{printf("%.3f + ", $4)}'`
+  #echo "($T 0) / ${NN}"
+  ms_per_nonce=$(echo "scale=3; ($T 0) / $NN" | bc)
+  echo $ms_per_nonce
+  qps=$(echo "scale=3; (1000.0 / $ms_per_nonce) * ${NQ}.0" | bc)
+
+  #N=`scripts/test_algorithm_timer --nonces ${NN} --workers 1 stat_filter [${NQ},500] | egrep '#solutions: ' | sed -e '/^.*#solutions: /s///' | cut -f1 -d',' | tail -1`
+  N=`grep '#solutions: ' $F | sed -e '/^.*#solutions: /s///' | cut -f1 -d',' | tail -1`
+
+  #echo "$(( N*100/NN ))"
+  percent=$(( N * 100 / NN ))
+  #echo "${percent}%"
+
+  echo "$S,${qps},${percent}"
+
+done
+

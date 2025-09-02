@@ -1,0 +1,486 @@
+=== Searching ../data/Fashion-MNIST/ queries=10 k=1 m=0 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0
+Recall@1: 70.00% (7 / 10 queries have GT in top-1)
+===== stat_filter bitslice 4-bit ( Top-1 ) =====
+Time for nonce: 4.007 ms (sum+stats: 2.503 ms + mad_sort: 0.032 ms + slice: 0.179 ms + search: 1.472 ms)
+Time to re-rank top 1 closest: 0.119 ms)
+Recall rate: 70.00% (7 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 815.00964, optimal_dist: 811.6044, time:    4 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=1 m=0.3 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.3
+Recall@1: 70.00% (7 / 10 queries have GT in top-1)
+===== stat_filter bitslice 4-bit ( Top-1 ) =====
+Time for nonce: 7.426 ms (sum+stats: 3.119 ms + mad_sort: 2.889 ms + slice: 0.160 ms + search: 1.418 ms)
+Time to re-rank top 1 closest: 0.101 ms)
+Recall rate: 70.00% (7 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 815.00964, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=1 m=0.31 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.31
+Recall@1: 70.00% (7 / 10 queries have GT in top-1)
+===== stat_filter bitslice 4-bit ( Top-1 ) =====
+Time for nonce: 7.561 ms (sum+stats: 3.058 ms + mad_sort: 2.933 ms + slice: 0.168 ms + search: 1.570 ms)
+Time to re-rank top 1 closest: 0.202 ms)
+Recall rate: 70.00% (7 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 815.00964, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=1 m=0.32 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.32
+Recall@1: 70.00% (7 / 10 queries have GT in top-1)
+===== stat_filter bitslice 4-bit ( Top-1 ) =====
+Time for nonce: 7.124 ms (sum+stats: 2.722 ms + mad_sort: 2.887 ms + slice: 0.158 ms + search: 1.515 ms)
+Time to re-rank top 1 closest: 0.130 ms)
+Recall rate: 70.00% (7 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 815.00964, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=1 m=0.4 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.4
+Recall@1: 70.00% (7 / 10 queries have GT in top-1)
+===== stat_filter bitslice 4-bit ( Top-1 ) =====
+Time for nonce: 7.043 ms (sum+stats: 2.654 ms + mad_sort: 2.889 ms + slice: 0.147 ms + search: 1.500 ms)
+Time to re-rank top 1 closest: 0.083 ms)
+Recall rate: 70.00% (7 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 815.00964, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=1 m=0.5 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.5
+Recall@1: 70.00% (7 / 10 queries have GT in top-1)
+===== stat_filter bitslice 4-bit ( Top-1 ) =====
+Time for nonce: 7.167 ms (sum+stats: 2.752 ms + mad_sort: 2.879 ms + slice: 0.163 ms + search: 1.536 ms)
+Time to re-rank top 1 closest: 0.078 ms)
+Recall rate: 70.00% (7 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 815.00964, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=1 m=0.7 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.7
+Recall@1: 70.00% (7 / 10 queries have GT in top-1)
+===== stat_filter bitslice 4-bit ( Top-1 ) =====
+Time for nonce: 7.162 ms (sum+stats: 2.763 ms + mad_sort: 2.853 ms + slice: 0.168 ms + search: 1.546 ms)
+Time to re-rank top 1 closest: 0.096 ms)
+Recall rate: 70.00% (7 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 815.00964, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=1 m=1.0 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 1
+Recall@1: 70.00% (7 / 10 queries have GT in top-1)
+===== stat_filter bitslice 4-bit ( Top-1 ) =====
+Time for nonce: 7.063 ms (sum+stats: 2.622 ms + mad_sort: 2.917 ms + slice: 0.140 ms + search: 1.524 ms)
+Time to re-rank top 1 closest: 0.077 ms)
+Recall rate: 70.00% (7 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 815.00964, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=1 m=1.5 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 1.5
+Recall@1: 70.00% (7 / 10 queries have GT in top-1)
+===== stat_filter bitslice 4-bit ( Top-1 ) =====
+Time for nonce: 7.322 ms (sum+stats: 2.832 ms + mad_sort: 2.902 ms + slice: 0.167 ms + search: 1.588 ms)
+Time to re-rank top 1 closest: 0.109 ms)
+Recall rate: 70.00% (7 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 815.00964, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=4 m=0 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0
+Recall@4: 100.00% (10 / 10 queries have GT in top-4)
+===== stat_filter bitslice 4-bit ( Top-4 ) =====
+Time for nonce: 4.523 ms (sum+stats: 2.646 ms + mad_sort: 0.026 ms + slice: 0.203 ms + search: 1.851 ms)
+Time to re-rank top 4 closest: 0.147 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    4 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=4 m=0.3 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.3
+Recall@4: 100.00% (10 / 10 queries have GT in top-4)
+===== stat_filter bitslice 4-bit ( Top-4 ) =====
+Time for nonce: 7.295 ms (sum+stats: 2.783 ms + mad_sort: 2.900 ms + slice: 0.149 ms + search: 1.612 ms)
+Time to re-rank top 4 closest: 0.089 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=4 m=0.31 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.31
+Recall@4: 100.00% (10 / 10 queries have GT in top-4)
+===== stat_filter bitslice 4-bit ( Top-4 ) =====
+Time for nonce: 7.141 ms (sum+stats: 2.574 ms + mad_sort: 2.915 ms + slice: 0.179 ms + search: 1.652 ms)
+Time to re-rank top 4 closest: 0.102 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=4 m=0.32 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.32
+Recall@4: 100.00% (10 / 10 queries have GT in top-4)
+===== stat_filter bitslice 4-bit ( Top-4 ) =====
+Time for nonce: 7.560 ms (sum+stats: 2.839 ms + mad_sort: 3.069 ms + slice: 0.162 ms + search: 1.652 ms)
+Time to re-rank top 4 closest: 0.128 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=4 m=0.4 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.4
+Recall@4: 100.00% (10 / 10 queries have GT in top-4)
+===== stat_filter bitslice 4-bit ( Top-4 ) =====
+Time for nonce: 7.842 ms (sum+stats: 3.132 ms + mad_sort: 2.972 ms + slice: 0.174 ms + search: 1.738 ms)
+Time to re-rank top 4 closest: 0.192 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    8 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=4 m=0.5 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.5
+Recall@4: 100.00% (10 / 10 queries have GT in top-4)
+===== stat_filter bitslice 4-bit ( Top-4 ) =====
+Time for nonce: 7.610 ms (sum+stats: 3.041 ms + mad_sort: 2.902 ms + slice: 0.146 ms + search: 1.667 ms)
+Time to re-rank top 4 closest: 0.138 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=4 m=0.7 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.7
+Recall@4: 100.00% (10 / 10 queries have GT in top-4)
+===== stat_filter bitslice 4-bit ( Top-4 ) =====
+Time for nonce: 7.208 ms (sum+stats: 2.569 ms + mad_sort: 2.902 ms + slice: 0.185 ms + search: 1.737 ms)
+Time to re-rank top 4 closest: 0.089 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=4 m=1.0 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 1
+Recall@4: 100.00% (10 / 10 queries have GT in top-4)
+===== stat_filter bitslice 4-bit ( Top-4 ) =====
+Time for nonce: 7.808 ms (sum+stats: 3.131 ms + mad_sort: 2.899 ms + slice: 0.175 ms + search: 1.778 ms)
+Time to re-rank top 4 closest: 0.174 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    8 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=4 m=1.5 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 1.5
+Recall@4: 100.00% (10 / 10 queries have GT in top-4)
+===== stat_filter bitslice 4-bit ( Top-4 ) =====
+Time for nonce: 7.323 ms (sum+stats: 2.654 ms + mad_sort: 2.895 ms + slice: 0.152 ms + search: 1.774 ms)
+Time to re-rank top 4 closest: 0.084 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=5 m=0 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0
+Recall@5: 100.00% (10 / 10 queries have GT in top-5)
+===== stat_filter bitslice 4-bit ( Top-5 ) =====
+Time for nonce: 4.688 ms (sum+stats: 2.643 ms + mad_sort: 0.026 ms + slice: 0.211 ms + search: 2.019 ms)
+Time to re-rank top 5 closest: 0.194 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    4 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=5 m=0.3 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.3
+Recall@5: 100.00% (10 / 10 queries have GT in top-5)
+===== stat_filter bitslice 4-bit ( Top-5 ) =====
+Time for nonce: 7.278 ms (sum+stats: 2.682 ms + mad_sort: 2.891 ms + slice: 0.168 ms + search: 1.705 ms)
+Time to re-rank top 5 closest: 0.150 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=5 m=0.31 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.31
+Recall@5: 100.00% (10 / 10 queries have GT in top-5)
+===== stat_filter bitslice 4-bit ( Top-5 ) =====
+Time for nonce: 7.296 ms (sum+stats: 2.637 ms + mad_sort: 2.912 ms + slice: 0.175 ms + search: 1.747 ms)
+Time to re-rank top 5 closest: 0.138 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=5 m=0.32 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.32
+Recall@5: 100.00% (10 / 10 queries have GT in top-5)
+===== stat_filter bitslice 4-bit ( Top-5 ) =====
+Time for nonce: 7.450 ms (sum+stats: 2.812 ms + mad_sort: 2.947 ms + slice: 0.143 ms + search: 1.691 ms)
+Time to re-rank top 5 closest: 0.105 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=5 m=0.4 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.4
+Recall@5: 100.00% (10 / 10 queries have GT in top-5)
+===== stat_filter bitslice 4-bit ( Top-5 ) =====
+Time for nonce: 7.657 ms (sum+stats: 2.929 ms + mad_sort: 2.926 ms + slice: 0.156 ms + search: 1.802 ms)
+Time to re-rank top 5 closest: 0.240 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=5 m=0.5 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.5
+Recall@5: 100.00% (10 / 10 queries have GT in top-5)
+===== stat_filter bitslice 4-bit ( Top-5 ) =====
+Time for nonce: 7.333 ms (sum+stats: 2.646 ms + mad_sort: 2.944 ms + slice: 0.172 ms + search: 1.743 ms)
+Time to re-rank top 5 closest: 0.201 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=5 m=0.7 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.7
+Recall@5: 100.00% (10 / 10 queries have GT in top-5)
+===== stat_filter bitslice 4-bit ( Top-5 ) =====
+Time for nonce: 7.556 ms (sum+stats: 2.928 ms + mad_sort: 2.866 ms + slice: 0.163 ms + search: 1.762 ms)
+Time to re-rank top 5 closest: 0.291 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=5 m=1.0 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 1
+Recall@5: 100.00% (10 / 10 queries have GT in top-5)
+===== stat_filter bitslice 4-bit ( Top-5 ) =====
+Time for nonce: 7.323 ms (sum+stats: 2.665 ms + mad_sort: 2.859 ms + slice: 0.148 ms + search: 1.799 ms)
+Time to re-rank top 5 closest: 0.132 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=5 m=1.5 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 1.5
+Recall@5: 100.00% (10 / 10 queries have GT in top-5)
+===== stat_filter bitslice 4-bit ( Top-5 ) =====
+Time for nonce: 7.144 ms (sum+stats: 2.442 ms + mad_sort: 2.881 ms + slice: 0.166 ms + search: 1.821 ms)
+Time to re-rank top 5 closest: 0.104 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=8 m=0 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0
+Recall@8: 100.00% (10 / 10 queries have GT in top-8)
+===== stat_filter bitslice 4-bit ( Top-8 ) =====
+Time for nonce: 5.164 ms (sum+stats: 2.914 ms + mad_sort: 0.026 ms + slice: 0.184 ms + search: 2.224 ms)
+Time to re-rank top 8 closest: 0.181 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    5 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=8 m=0.3 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.3
+Recall@8: 100.00% (10 / 10 queries have GT in top-8)
+===== stat_filter bitslice 4-bit ( Top-8 ) =====
+Time for nonce: 7.493 ms (sum+stats: 2.684 ms + mad_sort: 2.883 ms + slice: 0.163 ms + search: 1.926 ms)
+Time to re-rank top 8 closest: 0.150 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=8 m=0.31 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.31
+Recall@8: 100.00% (10 / 10 queries have GT in top-8)
+===== stat_filter bitslice 4-bit ( Top-8 ) =====
+Time for nonce: 7.731 ms (sum+stats: 2.772 ms + mad_sort: 2.912 ms + slice: 0.176 ms + search: 2.047 ms)
+Time to re-rank top 8 closest: 0.143 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=8 m=0.32 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.32
+Recall@8: 100.00% (10 / 10 queries have GT in top-8)
+===== stat_filter bitslice 4-bit ( Top-8 ) =====
+Time for nonce: 7.344 ms (sum+stats: 2.508 ms + mad_sort: 2.921 ms + slice: 0.173 ms + search: 1.915 ms)
+Time to re-rank top 8 closest: 0.109 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=8 m=0.4 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.4
+Recall@8: 100.00% (10 / 10 queries have GT in top-8)
+===== stat_filter bitslice 4-bit ( Top-8 ) =====
+Time for nonce: 7.450 ms (sum+stats: 2.668 ms + mad_sort: 2.906 ms + slice: 0.188 ms + search: 1.876 ms)
+Time to re-rank top 8 closest: 0.108 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=8 m=0.5 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.5
+Recall@8: 100.00% (10 / 10 queries have GT in top-8)
+===== stat_filter bitslice 4-bit ( Top-8 ) =====
+Time for nonce: 7.672 ms (sum+stats: 2.825 ms + mad_sort: 2.906 ms + slice: 0.166 ms + search: 1.941 ms)
+Time to re-rank top 8 closest: 0.151 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=8 m=0.7 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.7
+Recall@8: 100.00% (10 / 10 queries have GT in top-8)
+===== stat_filter bitslice 4-bit ( Top-8 ) =====
+Time for nonce: 8.158 ms (sum+stats: 3.289 ms + mad_sort: 2.901 ms + slice: 0.166 ms + search: 1.968 ms)
+Time to re-rank top 8 closest: 0.152 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    8 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=8 m=1.0 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 1
+Recall@8: 100.00% (10 / 10 queries have GT in top-8)
+===== stat_filter bitslice 4-bit ( Top-8 ) =====
+Time for nonce: 7.746 ms (sum+stats: 2.704 ms + mad_sort: 2.910 ms + slice: 0.166 ms + search: 2.132 ms)
+Time to re-rank top 8 closest: 0.131 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=8 m=1.5 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 1.5
+Recall@8: 100.00% (10 / 10 queries have GT in top-8)
+===== stat_filter bitslice 4-bit ( Top-8 ) =====
+Time for nonce: 7.956 ms (sum+stats: 2.854 ms + mad_sort: 2.911 ms + slice: 0.166 ms + search: 2.191 ms)
+Time to re-rank top 8 closest: 0.127 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    8 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=10 m=0 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0
+Recall@10: 100.00% (10 / 10 queries have GT in top-10)
+===== stat_filter bitslice 4-bit ( Top-10 ) =====
+Time for nonce: 5.871 ms (sum+stats: 3.401 ms + mad_sort: 0.028 ms + slice: 0.180 ms + search: 2.442 ms)
+Time to re-rank top 10 closest: 0.342 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    6 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=10 m=0.3 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.3
+Recall@10: 100.00% (10 / 10 queries have GT in top-10)
+===== stat_filter bitslice 4-bit ( Top-10 ) =====
+Time for nonce: 7.642 ms (sum+stats: 2.667 ms + mad_sort: 2.868 ms + slice: 0.164 ms + search: 2.107 ms)
+Time to re-rank top 10 closest: 0.235 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=10 m=0.31 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.31
+Recall@10: 100.00% (10 / 10 queries have GT in top-10)
+===== stat_filter bitslice 4-bit ( Top-10 ) =====
+Time for nonce: 7.813 ms (sum+stats: 2.766 ms + mad_sort: 2.895 ms + slice: 0.150 ms + search: 2.152 ms)
+Time to re-rank top 10 closest: 0.130 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=10 m=0.32 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.32
+Recall@10: 100.00% (10 / 10 queries have GT in top-10)
+===== stat_filter bitslice 4-bit ( Top-10 ) =====
+Time for nonce: 8.348 ms (sum+stats: 3.310 ms + mad_sort: 2.912 ms + slice: 0.149 ms + search: 2.126 ms)
+Time to re-rank top 10 closest: 0.128 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    8 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=10 m=0.4 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.4
+Recall@10: 100.00% (10 / 10 queries have GT in top-10)
+===== stat_filter bitslice 4-bit ( Top-10 ) =====
+Time for nonce: 7.542 ms (sum+stats: 2.593 ms + mad_sort: 2.874 ms + slice: 0.164 ms + search: 2.075 ms)
+Time to re-rank top 10 closest: 0.101 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=10 m=0.5 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.5
+Recall@10: 100.00% (10 / 10 queries have GT in top-10)
+===== stat_filter bitslice 4-bit ( Top-10 ) =====
+Time for nonce: 8.035 ms (sum+stats: 2.960 ms + mad_sort: 2.936 ms + slice: 0.162 ms + search: 2.139 ms)
+Time to re-rank top 10 closest: 0.198 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    8 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=10 m=0.7 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.7
+Recall@10: 100.00% (10 / 10 queries have GT in top-10)
+===== stat_filter bitslice 4-bit ( Top-10 ) =====
+Time for nonce: 7.727 ms (sum+stats: 2.693 ms + mad_sort: 2.876 ms + slice: 0.152 ms + search: 2.158 ms)
+Time to re-rank top 10 closest: 0.132 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    7 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=10 m=1.0 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 1
+Recall@10: 100.00% (10 / 10 queries have GT in top-10)
+===== stat_filter bitslice 4-bit ( Top-10 ) =====
+Time for nonce: 7.767 ms (sum+stats: 2.547 ms + mad_sort: 2.954 ms + slice: 0.154 ms + search: 2.266 ms)
+Time to re-rank top 10 closest: 0.357 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    8 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=10 m=1.5 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 1.5
+Recall@10: 100.00% (10 / 10 queries have GT in top-10)
+===== stat_filter bitslice 4-bit ( Top-10 ) =====
+Time for nonce: 7.977 ms (sum+stats: 2.870 ms + mad_sort: 2.867 ms + slice: 0.177 ms + search: 2.240 ms)
+Time to re-rank top 10 closest: 0.105 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    8 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=20 m=0 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0
+Recall@20: 100.00% (10 / 10 queries have GT in top-20)
+===== stat_filter bitslice 4-bit ( Top-20 ) =====
+Time for nonce: 6.065 ms (sum+stats: 2.868 ms + mad_sort: 0.031 ms + slice: 0.278 ms + search: 3.166 ms)
+Time to re-rank top 20 closest: 0.249 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    6 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=20 m=0.3 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.3
+Recall@20: 100.00% (10 / 10 queries have GT in top-20)
+===== stat_filter bitslice 4-bit ( Top-20 ) =====
+Time for nonce: 8.870 ms (sum+stats: 2.982 ms + mad_sort: 3.037 ms + slice: 0.149 ms + search: 2.851 ms)
+Time to re-rank top 20 closest: 0.286 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    9 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=20 m=0.31 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.31
+Recall@20: 100.00% (10 / 10 queries have GT in top-20)
+===== stat_filter bitslice 4-bit ( Top-20 ) =====
+Time for nonce: 8.970 ms (sum+stats: 2.969 ms + mad_sort: 3.005 ms + slice: 0.192 ms + search: 2.996 ms)
+Time to re-rank top 20 closest: 0.365 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    9 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=20 m=0.32 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.32
+Recall@20: 100.00% (10 / 10 queries have GT in top-20)
+===== stat_filter bitslice 4-bit ( Top-20 ) =====
+Time for nonce: 8.791 ms (sum+stats: 3.049 ms + mad_sort: 2.883 ms + slice: 0.158 ms + search: 2.859 ms)
+Time to re-rank top 20 closest: 0.295 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    9 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=20 m=0.4 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.4
+Recall@20: 100.00% (10 / 10 queries have GT in top-20)
+===== stat_filter bitslice 4-bit ( Top-20 ) =====
+Time for nonce: 8.280 ms (sum+stats: 2.548 ms + mad_sort: 2.893 ms + slice: 0.164 ms + search: 2.839 ms)
+Time to re-rank top 20 closest: 0.286 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    8 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=20 m=0.5 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.5
+Recall@20: 100.00% (10 / 10 queries have GT in top-20)
+===== stat_filter bitslice 4-bit ( Top-20 ) =====
+Time for nonce: 8.289 ms (sum+stats: 2.527 ms + mad_sort: 2.891 ms + slice: 0.162 ms + search: 2.871 ms)
+Time to re-rank top 20 closest: 0.283 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    8 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=20 m=0.7 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 0.7
+Recall@20: 100.00% (10 / 10 queries have GT in top-20)
+===== stat_filter bitslice 4-bit ( Top-20 ) =====
+Time for nonce: 8.679 ms (sum+stats: 2.745 ms + mad_sort: 2.975 ms + slice: 0.192 ms + search: 2.959 ms)
+Time to re-rank top 20 closest: 0.332 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    9 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=20 m=1.0 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 1
+Recall@20: 100.00% (10 / 10 queries have GT in top-20)
+===== stat_filter bitslice 4-bit ( Top-20 ) =====
+Time for nonce: 8.614 ms (sum+stats: 2.815 ms + mad_sort: 2.883 ms + slice: 0.141 ms + search: 2.916 ms)
+Time to re-rank top 20 closest: 0.239 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    8 ms
+=== Searching ../data/Fashion-MNIST/ queries=10 k=20 m=1.5 ===
+vector_dims: 784, database_size: 60000, num_queries: 10 (of 10000)
+stat_filter scale: 1.5
+Recall@20: 100.00% (10 / 10 queries have GT in top-20)
+===== stat_filter bitslice 4-bit ( Top-20 ) =====
+Time for nonce: 9.247 ms (sum+stats: 3.226 ms + mad_sort: 2.935 ms + slice: 0.172 ms + search: 3.086 ms)
+Time to re-rank top 20 closest: 0.164 ms)
+Recall rate: 100.00% (10 / 10 queries matched)
+instance: "784-euclidean.bin", avg_dist: 811.6044, optimal_dist: 811.6044, time:    9 ms

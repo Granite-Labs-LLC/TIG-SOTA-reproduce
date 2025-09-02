@@ -1,0 +1,124 @@
+    1  ls
+    2  cd tig-monorepo-cb/
+    3  ls
+    4  build_algorithm stat_filter
+    5  ls
+    6  ls -l scripts/
+    7  script/test_algorithm
+    8  scripts/test_algorithm
+    9  scripts/test_algorithm --nonces 10 --verbose stat_filter [200,50]
+   10  scripts/test_algorithm --nonces 10 --verbose stat_filter [200,50] | grep Time
+   11  top
+   12  ls
+   13  cd ../
+   14  ls
+   15  cd vector_search_evaluator/
+   16  ls
+   17  vi Cargo.toml-local
+   18  apt -y install vim
+   19  vi Cargo.toml-local
+   20  ls
+   21  ls ..
+   22  vi Cargo.toml
+   23  history | grep ALGO
+   24  ALGORITHM=stat_filter cargo build --release
+   25  find ../tig-monorepo-cb/ -name '*.rs' | xargs -n15 grep FLT_MAX
+   26  find . ../tig-monorepo-cb/ -name '*.rs' | xargs -n15 grep FLT_MAX
+   27  find . ../tig-monorepo-cb/ -name '*.cu' | xargs -n15 grep FLT_MAX
+   28  find /usr/include /usr/local/ -name '*.h' | xargs -n15 grep FLT_MAX
+   29  find /usr/include /usr/local/ -name '*.h' | xargs -n15 grep FLT_MAX | grep define
+   30  find /usr/local/cuda* -name '*.h' | xargs -n15 grep FLT_MAX | grep define
+   31  find /usr/local/cuda* -name '*.h' | xargs -n15 grep FLT_MAX | grep 'define *FLTMAX'
+   32  find /usr/local/cuda* -name '*.h' | xargs -n15 grep FLT_MAX | grep 'define[^a-zA-Z] *FLTMAX'
+   33  find /usr/local/cuda* -name '*.h' | xargs -n15 grep FLT_MAX | grep 'define[^a-zA-Z] *FLT_MAX'
+   34  find /usr/include /usr/local/cuda* -name '*.h' | xargs -n15 grep FLT_MAX | grep 'define[^a-zA-Z] *FLT_MAX'
+   35  find /usr/include /usr/local/cuda* -name '*.h' | xargs -n15 grep FLT_MAX | grep 'define'
+   36  ALGORITHM=stat_filter cargo build --release
+   37  find . -name '*.h' | xargs -n15 grep FLT_MAX | grep 'define'
+   38  find . -name '*.h' | xargs -n15 grep FLT_MAX
+   39  find . -name '*.[ch]*' | xargs -n15 grep FLT_MAX
+   40  ls
+   41  cd ../tig-monorepo-cb/
+   42  ls
+   43  cd tig-algorithms/src/vector_search/stat_filter/
+   44  vi benchmarker_outbound.cu 
+   45  cd ../../..
+   46  cd ..
+   47  build_algorithm stat_filter
+   48  scripts/test_algorithm --nonces 10 --verbose stat_filter [200,50]
+   49  scripts/test_algorithm --nonces 10 --verbose stat_filter [200,50] | grep Time
+   50  more /proc/cpuinfo 
+   51  top
+   52  ls
+   53  cd ../
+   54  cd vector_search_evaluator/
+   55  ls
+   56  history 
+   57  ALGORITHM=stat_filter cargo build --release
+   58  history 
+   59  vi build.rs 
+   60  ALGORITHM=stat_filter cargo build --release
+   61  ALGORITHM=stat_filter cargo build --release > /tmp/out1 2>&1
+   62  vi /tmp/out1
+   63  vi src/main.rs
+   64  ALGORITHM=stat_filter cargo build --release > /tmp/out2 2>&1
+   65  vi /tmp/out2
+   66  ALGORITHM=stat_filter cargo build --release
+   67  ls
+   68  find . -type f | xargs -n15 grep improved_search
+   69  vi src/main.rs
+   70  ALGORITHM=stat_filter cargo build --release
+   71  find . -type f | xargs -n15 grep git
+   72  ls
+   73  vi Cargo.lock 
+   74  rm Cargo.lock
+   75  ls
+   76  rm -rf target
+   77  find . -type f | xargs -n15 grep git
+   78  mv ./Cargo.toml.template ./Cargo.toml.template-old
+   79  ls
+   80  find . -type f | xargs -n15 grep git
+   81  find . -type f | xargs -n15 grep cargo
+   82  history 
+   83  history | grep git
+   84  ls ~/.cargo
+   85  ls ~/.cargo/git
+   86  ls ~/.cargo/git/*
+   87  ls ~/.cargo/git/*/cudarc*
+   88  rm -rf ~/.cargo/git/*/cudarc*
+   89  ls
+   90  history 
+   91  cd ../tig-monorepo-cb/
+   92  ls
+   93  find . -name 'Cargo.toml'
+   94  find . -name 'Cargo.toml' | xargs -n15 grep cudarc
+   95  vi ./tig-algorithms/Cargo.toml
+   96  history 
+   97  ALGORITHM=stat_filter cargo build --release
+   98  apt -y install pkg-config
+   99  ALGORITHM=stat_filter cargo build --release
+  100  apt -y install openssl-devel
+  101  apt -y install libssl-dev
+  102  ALGORITHM=stat_filter cargo build --release
+  103  cd ../vector_search_evaluator/
+  104  ls
+  105  ALGORITHM=stat_filter cargo build --release
+  106  vi Cargo.toml
+  107  ALGORITHM=stat_filter cargo build --release
+  108  ALGORITHM=stat_filter cargo build --release --features cudarc
+  109  cat run.sh 
+  110  ALGORITHM=stat_filter cargo run --release --features cudarc -- data/SIFT
+  111  ALGORITHM=stat_filter cargo build --release --features cudarc
+  112  ls -ltr target/release/
+  113  vector_search_evaluator data/SIFT
+  114  target/release/vector_search_evaluator data/SIFT
+  115  target/release/vector_search_evaluator data/Fashion-MNIST/
+  116  ls
+  117  cd ..
+  118  cp -a vector_search_evaluator/ vector_search_evaluator-stat_filter
+  119  cp -a vector_search_evaluator vector_search_evaluator-improved_search
+  120  cd vector_search_evaluator-improved_search
+  121  ls
+  122  cd ../*stat_filter
+  123  ls
+  124  history > CMDS.txt

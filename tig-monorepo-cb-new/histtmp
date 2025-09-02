@@ -1,0 +1,35 @@
+    6  chmod a+x scripts/*timer
+    8  scripts/test_algorithm_timer --nonces 10 --workers 1 stat_filter [2000,500]
+    9  scripts/test_algorithm_timer --nonces 10 --workers 1 stat_filter [2000,500] | grep Time
+   10  scripts/test_algorithm_timer --nonces 10 --workers 1 improved_search [2000,500] | grep Time
+   12  scripts/test_algorithm_timer --nonces 10 --workers 1 improved_search [2000,500] | grep Time
+   13  scripts/test_algorithm_timer --nonces 10 --workers 1 improved_search [2000,500] | egrep 'Time|found'
+   14  scripts/test_algorithm_timer --nonces 10 --workers 1 improved_search [2000,500] | egrep 'Time|solution'
+   15  scripts/test_algorithm_timer --nonces 10 --workers 1 improved_search [2000,500] | egrep 'Time|finished'
+   16  scripts/test_algorithm_timer --nonces 10 --workers 1 stat_filter [2000,500] | egrep 'Time|finished'
+   46  scripts/test_algorithm_timer --nonces 10 --workers 1 brute_prefilter [2000,500] | egrep 'Time|finished'
+   47  scripts/test_algorithm_timer --nonces 10 --workers 1 brute_prefilter [2000,500] | egrep 'Time'
+   48  scripts/test_algorithm_timer --nonces 10 --workers 1 improved_search [2000,500] | egrep 'Time'
+   49  scripts/test_algorithm_timer --nonces 10 --workers 1 stat_filter [2000,500] | egrep 'Time'
+   50  scripts/test_algorithm_timer --nonces 10 --workers 1 brute_prefilter [2000,500] | egrep 'Time' | awk '{print $4}'
+   51  scripts/test_algorithm_timer --nonces 10 --workers 1 stat_filter [2000,500] | egrep 'Time'  | awk '{print $4}'
+   52  scripts/test_algorithm_timer --nonces 10 --workers 1 improved_search [2000,500] | egrep 'Time'  | awk '{print $4}'
+   53  scripts/test_algorithm_timer --nonces 100 --workers 1 brute_prefilter [2000,500] | egrep 'Time' | awk '{print $4}'
+   54  scripts/test_algorithm_timer --nonces 100 --workers 1 stat_filter [2000,500] | egrep 'Time' | awk '{print $4}'
+   55  scripts/test_algorithm_timer --nonces 100 --workers 1 improved_search [2000,500] | egrep 'Time' | awk '{print $4}'
+   56  scripts/test_algorithm_timer --nonces 100 --workers 4 stat_filter [2000,500] | egrep 'Time' | awk '{print $4}'
+   58  scripts/test_algorithm_timer --nonces 100 --workers 2 stat_filter [2000,500] | egrep 'Time' | awk '{print $4}'
+   59  scripts/test_algorithm_timer --nonces 100 --workers 8 stat_filter [2000,500] | egrep 'Time' | awk '{print $4}'
+   60  time scripts/test_algorithm_timer --nonces 100 --workers 8 stat_filter [2000,500] | egrep 'Time' | awk '{print $4}'
+   61  time scripts/test_algorithm_timer --nonces 100 --workers 4 stat_filter [2000,500] | egrep 'Time' | awk '{print $4}'
+   62  time scripts/test_algorithm_timer --nonces 100 --workers 2 stat_filter [2000,500] | egrep 'Time' | awk '{print $4}'
+   63  time scripts/test_algorithm_timer --nonces 100 --workers 1 stat_filter [2000,500] | egrep 'Time' | awk '{print $4}'
+   64  time scripts/test_algorithm_timer --nonces 100 --workers 8 stat_filter [2000,500] | egrep 'Time' | awk '{print $4}'
+   66  time scripts/test_algorithm_timer --nonces 100 --workers 1 brute_prefilter [2000,500] | egrep 'Time' | awk '{print $4}'
+   67  time scripts/test_algorithm_timer --nonces 10 --workers 1 improved_search [2000,500] | egrep 'Time'  | awk '{print $4}'
+   68  time scripts/test_algorithm_timer --nonces 100 --workers 1 improved_search [2000,500] | egrep 'Time'  | awk '{print $4}'
+   69  time scripts/test_algorithm_timer --nonces 100 --workers 2 improved_search [2000,500] | egrep 'Time'  | awk '{print $4}'
+   70  time scripts/test_algorithm_timer --nonces 100 --workers 4 improved_search [2000,500] | egrep 'Time'  | awk '{print $4}'
+   71  time scripts/test_algorithm_timer --nonces 100 --workers 8 improved_search [2000,500] | egrep 'Time'  | awk '{print $4}'
+   78  history  | grep time 
+   79  history  | grep time  > histtmp
