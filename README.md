@@ -82,88 +82,46 @@ The algorithm includes automatic adaptation with configurable tuning parameters:
 
 **TUNING PHILOSOPHY**: These parameters allow optimization for specific datasets and use cases. The algorithm's automatic adaptation handles the complex mathematical conversions, while these tuning knobs let you optimize the speed/recall tradeoff for your specific requirements.
 
-## Alternative Configuration: Parameter Files (.parm)
+## Parameter Reference Documentation
 
-**For TIG Testing Environments with Hardcoded Environment Variables:**
+**Optimal Configuration Values Documented in .parm Files:**
 
-If the TIG testing framework has hardcoded environment variables and you cannot set the optimal parameters directly, you can use dataset-specific parameter files as an alternative configuration method.
+The repository includes parameter reference files showing the exact optimal configurations:
 
-### Creating Parameter Files
+### Parameter Reference Files (Already in Place)
 
-Create `.parm` files for each dataset with the optimal parameters:
-
-**For SIFT Dataset (`sift.parm`):**
+**SIFT Dataset Reference (`../data/SIFT/sift.parm`):**
 ```
-# Optimal SIFT-1M parameters for stat_filter
-# Best balance configuration: 97.56% recall, 161ms
+# OPTIMAL SIFT-1M parameters proven through extensive testing
+# Best balance: 97.56% recall, 161ms, 62,112 QPS
 BIT_MODE=4
 TOP_K=5  
 MAD_SCALE=0
 
-# Alternative: Highest recall (98.78% recall, 167ms)
-# BIT_MODE=4
-# TOP_K=8
-# MAD_SCALE=0
-
-# Alternative: Fastest (96.41% recall, 159ms)  
-# BIT_MODE=4
-# TOP_K=4
-# MAD_SCALE=0
+# Alternative configurations documented in file with performance metrics
 ```
 
-**For Fashion-MNIST Dataset (`fashion_mnist.parm`):**
+**Fashion-MNIST Dataset Reference (`../data/Fashion-MNIST/fashion_mnist.parm`):**
 ```
-# Optimal Fashion-MNIST parameters for stat_filter
+# OPTIMAL Fashion-MNIST parameters proven through extensive testing  
 # Speed/recall balance: 90.25% recall, 48ms, 208,333 QPS
 BIT_MODE=2
 TOP_K=10
 MAD_SCALE=0.4
 
-# Alternative: High precision (95.21% recall, 68ms)
-# BIT_MODE=4  
-# TOP_K=4
-# MAD_SCALE=0.4
-
-# Alternative: Small batch perfect recall (100% recall, 4ms)
-# BIT_MODE=4
-# TOP_K=5
-# MAD_SCALE=0
+# Alternative configurations documented in file with performance metrics
 ```
 
-### Parameter File Usage
+### Current Implementation
 
-Place the appropriate `.parm` file in the same directory as your dataset:
+**Environment Variable Based**: The algorithm currently reads parameters via environment variables:
+- `STATFILT_BIT_MODE`
+- `STATFILT_TOP_K` 
+- `STATFILT_MAD_SCALE`
 
-```bash
-# Copy the provided parameter files to data directories
-cp sift.parm ../data/SIFT/
-cp fashion_mnist.parm ../data/Fashion-MNIST/
+**Parameter Files as Reference**: The `.parm` files document the exact optimal values and serve as the authoritative source for what environment variables should be set to achieve state-of-the-art performance.
 
-# Verify parameter files are in place
-ls -la ../data/SIFT/sift.parm
-ls -la ../data/Fashion-MNIST/fashion_mnist.parm
-
-# The algorithm will automatically detect and use these parameter files
-# when environment variables are not available or hardcoded
-```
-
-### Sample Parameter Files Provided
-
-This repository includes pre-configured parameter files with optimal settings:
-
-- **`sift.parm`** - Optimal parameters for SIFT-1M dataset
-- **`fashion_mnist.parm`** - Optimal parameters for Fashion-MNIST-60K dataset
-
-These files contain the exact parameter combinations that achieved the state-of-the-art results documented in the evidence submission.
-
-### Implementation Note
-
-The stat_filter algorithm should be modified to check for dataset-specific `.parm` files in the following priority order:
-1. Environment variables (if available)
-2. Dataset-specific `.parm` file (e.g., `../data/SIFT/sift.parm`)
-3. Default fallback values
-
-This ensures optimal performance regardless of whether the testing environment allows environment variable configuration.
+**For TIG Team**: When hardcoding environment variables in your testing framework, use the values documented in these parameter reference files.
 
 ## Repository Structure
 
@@ -174,9 +132,11 @@ REPRODUCE_SOTA/
 ├── PARAMS.md                   # Quick parameter reference for TIG team
 ├── data/                       # Test datasets (SIFT, Fashion-MNIST) download scripts
 │   ├── SIFT/                   # SIFT-1M dataset directory
-│   │   └── sift.parm           # Optimal parameters for SIFT dataset
+│   │   ├── sift.bin            # Dataset file (1M vectors, 128 dims)  (once downloaded)
+│   │   └── sift.parm           # Parameter reference (optimal values)
 │   └── Fashion-MNIST/          # Fashion-MNIST-60K dataset directory
-│       └── fashion_mnist.parm  # Optimal parameters for Fashion-MNIST dataset
+│       ├── 784-euclidean.bin   # Dataset file (60K vectors, 784 dims) (once downloaded)
+│       └── fashion_mnist.parm  # Parameter reference (optimal values)
 ├── stat_filter_new/            # New version of stat_filter algorithm
 │   ├── BUILD_RUN.sh            # Build and test runner script
 │   ├── src/main.rs             # Algorithm implementation
@@ -274,16 +234,17 @@ To just compile without running tests:
 sh BUILD_RUN.sh build
 ```
 
-#### Using Parameter Files (Alternative to Environment Variables)
+#### Parameter Files (Reference for Optimal Settings)
 
-If the TIG testing framework has hardcoded environment variables, first copy the optimal parameter files:
+The repository includes optimal parameter files already placed in the data directories:
 
 ```bash
-# Copy optimal parameter files to dataset directories  
-cp sift.parm ../data/SIFT/
-cp fashion_mnist.parm ../data/Fashion-MNIST/
+# Parameter files are already in place:
+ls -la ../data/SIFT/sift.parm           # Optimal SIFT parameters  
+ls -la ../data/Fashion-MNIST/fashion_mnist.parm  # Optimal Fashion-MNIST parameters
 
-# Then run normally - the algorithm will use parameter files automatically
+# Currently, the algorithm reads environment variables directly
+# The .parm files serve as reference for optimal values
 sh BUILD_RUN.sh rebuild
 ```
 
@@ -442,29 +403,25 @@ ls -la Fashion-MNIST/
 4. **Permission Issues**: Scripts should be executable; use `chmod +x BUILD_RUN.sh` if needed
 5. **Poor Performance/Recall**: 
    - **Check parameter configuration** - incorrect parameters are the #1 cause of poor results
-   - **Verify environment variables** are set correctly, or use `.parm` files if variables are hardcoded
+   - **Verify environment variables** are set correctly (reference `.parm` files for optimal values)
    - **For SIFT**: MUST use `MAD_SCALE=0` and `TOP_K≥4`
    - **For Fashion-MNIST**: Use `MAD_SCALE=0.4` for large batches, `MAD_SCALE=0` for small batches
 
-### Hardcoded Environment Variables Issue
+### Parameter Reference Files
 
-**If you cannot set environment variables** (e.g., in TIG testing framework):
+**Optimal parameter configurations are documented in .parm files:**
 
-1. **Use the provided parameter files**:
-   ```bash
-   # Copy optimal parameter files to dataset directories
-   cp sift.parm ../data/SIFT/
-   cp fashion_mnist.parm ../data/Fashion-MNIST/
-   ```
+The repository includes parameter reference files that show the optimal configurations:
 
-2. **Verify parameter files are detected**:
-   ```bash
-   # Check that files are in the correct locations
-   ls -la ../data/SIFT/sift.parm
-   ls -la ../data/Fashion-MNIST/fashion_mnist.parm
-   ```
+```bash
+# Parameter reference files (already in place):
+cat ../data/SIFT/sift.parm           # Shows optimal SIFT parameters  
+cat ../data/Fashion-MNIST/fashion_mnist.parm  # Shows optimal Fashion-MNIST parameters
+```
 
-3. **Request algorithm modification** if needed to support parameter file loading
+**Current Implementation**: The algorithm reads environment variables directly. The `.parm` files serve as authoritative reference for what values should be used when configuring the testing environment.
+
+**For TIG Team**: Use the values from these files when setting up hardcoded environment variables in your testing framework.
 
 ### Verifying Setup
 

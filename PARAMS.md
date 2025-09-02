@@ -125,17 +125,17 @@ Results obtained on:
 
 ## IMPLEMENTATION NOTE
 
-**Priority Order for Parameter Loading:**
-1. Environment variables (if available)  
-2. Dataset-specific `.parm` files (if environment variables are hardcoded)
-3. Intelligent defaults (conservative, high-recall settings)
+**Current Parameter System:**
+1. **Environment variables**: Algorithm reads `STATFILT_BIT_MODE`, `STATFILT_TOP_K`, `STATFILT_MAD_SCALE`
+2. **Intelligent defaults**: Conservative fallback values (MAD_SCALE=1.0, TOP_K=20, BIT_MODE=4)
+3. **Reference files**: `.parm` files document optimal values for each dataset
 
-**Parameter Files Usage:**
-If environment variables cannot be set in your testing framework:
-- Copy `sift.parm` to `data/SIFT/` directory  
-- Copy `fashion_mnist.parm` to `data/Fashion-MNIST/` directory
+**Parameter Reference Files:**
+The repository includes parameter files with optimal configurations already in place:
+- `data/SIFT/sift.parm` - Documents optimal SIFT parameters
+- `data/Fashion-MNIST/fashion_mnist.parm` - Documents optimal Fashion-MNIST parameters
 
-The algorithm will automatically detect and use these files when environment variables are unavailable, ensuring optimal performance regardless of testing environment constraints.
+**Current Implementation**: The algorithm reads environment variables directly. Use the values from these reference files when configuring your testing environment or hardcoding parameters.
 
 ## KEY INSIGHT: INTELLIGENT AUTOMATION + OPTIMAL TUNING
 
