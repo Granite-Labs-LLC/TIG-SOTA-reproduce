@@ -6,6 +6,54 @@ This tutorial walks you through building and running the `stat_filter` algorithm
 
 The `stat_filter` algorithm is a vector search implementation that uses statistical filtering techniques with configurable bit modes and top-K selection. This repository contains both "new" and "old" versions of the algorithm for comparison and SOTA (State of the Art) testing.
 
+## ⚠️ CRITICAL: Parameter Configuration Requirements
+
+**MANDATORY READING**: The `stat_filter` algorithm's performance is **extremely sensitive** to parameter configuration. Using incorrect parameters will result in poor recall rates and misleading performance results.
+
+### Required Parameters by Dataset
+
+**For SIFT Dataset (1M vectors, 128 dimensions):**
+```bash
+# REQUIRED Configuration 1: High recall, 2-bit
+STATFILT_BIT_MODE=2 STATFILT_TOP_K=20 STATFILT_MAD_SCALE=5
+
+# REQUIRED Configuration 2: High precision, 4-bit  
+STATFILT_BIT_MODE=4 STATFILT_TOP_K=5 STATFILT_MAD_SCALE=5
+```
+
+**For Fashion-MNIST Dataset (60K vectors, 784 dimensions):**
+```bash
+# REQUIRED Configuration 1: Balanced performance, 2-bit
+STATFILT_BIT_MODE=2 STATFILT_TOP_K=10 STATFILT_MAD_SCALE=0.4
+
+# REQUIRED Configuration 2: High precision, 4-bit
+STATFILT_BIT_MODE=4 STATFILT_TOP_K=4 STATFILT_MAD_SCALE=0.4
+```
+
+### ❌ Common Parameter Mistakes
+
+**DO NOT use these combinations - they will produce poor results:**
+- MAD_SCALE=0.5 on SIFT dataset → **Will severely degrade recall performance**
+- Low TOP_K values (<5) on SIFT → **Will miss optimal candidates**
+- High MAD_SCALE (>1.0) on Fashion-MNIST → **Will defeat the statistical filtering**
+
+### Why Parameters Matter
+
+- **MAD_SCALE**: Controls statistical filtering aggressiveness
+  - SIFT needs `MAD_SCALE=5` (effectively disables filtering) due to data distribution
+  - Fashion-MNIST works well with `MAD_SCALE=0.4` (aggressive filtering)
+  
+- **TOP_K**: Number of candidates to consider
+  - SIFT requires higher values (5-20) due to dataset complexity
+  - Fashion-MNIST can use lower values (4-10) effectively
+  
+- **BIT_MODE**: Quantization precision vs speed tradeoff
+  - 2-bit: Faster execution, lower memory usage
+  - 4-bit: Better precision, higher computational cost
+
+**The parameters used in this tutorial are the result of extensive optimization and testing. Deviating from these values without understanding the algorithmic implications will likely produce suboptimal results.**
+
+
 ## Repository Structure
 
 ```
